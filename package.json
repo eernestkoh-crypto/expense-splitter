@@ -1,0 +1,12 @@
+{
+  "name": "expense-splitter",
+  "version": "1.0.0",
+  "description": "Friend group expense splitter for 4 people",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  }
+}

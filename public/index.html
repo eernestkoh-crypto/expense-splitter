@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Squad Splitter</title>
+  <style>
+    :root {
+      --bg: #0f0f0f;
+      --card: #1a1a2e;
+      --accent: #e94560;
+      --accent2: #0f3460;
+      --text: #eee;
+      --muted: #888;
+      --green: #00c897;
+      --red: #e94560;
+      --border: #2a2a4a;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      padding: 30px 0 20px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      background: linear-gradient(135deg, var(--accent), #533483);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    header p {
+      color: var(--muted);
+      margin-top: 6px;
+      font-size: 0.9rem;
+    }
+
+    /* Setup Section */
+    .setup-card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .setup-card h2 {
+      margin-bottom: 16px;
+      font-size: 1.1rem;
+    }
+
+    .name-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .name-grid input {
+      padding: 12px 16px;
+      background: #111;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .name-grid input:focus {
+      border-color: var(--accent);
+    }
+
+    .btn {
+      padding: 12px 28px;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.2s;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #533483);
+      color: white;
+      width: 100%;
+      margin-top: 16px;
+    }
+
+    .btn-small {
+      padding: 8px 18px;
+      font-size: 0.85rem;
+      border-radius: 8px;
+    }
+
+    .btn-danger {
+      background: rgba(233, 69, 96, 0.15);
+      color: var(--accent);
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--card);
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .tab {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* Add Expense Form */
+    .expense-form {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .expense-form h2 {
+      margin-bottom: 16px;
+      font-size: 1.1rem;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .form-group {
+      flex: 1;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 12px 14px;
+      background: #111;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .form-group input:focus, .form-group select:focus {
+      border-color: var(--accent);
+    }
+
+    .form-group select option {
+      background: #111;
+    }
+
+    .split-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .split-checks {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .split-checks label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: #111;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+    }
+
+    .split-checks label:has(input:checked) {
+      border-color: var(--accent);
+      background: rgba(233, 69, 96, 0.1);
+    }
+
+    .split-checks input[type="checkbox"] {
+      accent-color: var(--accent);
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Expense List */
+    .expense-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .expense-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: border-color 0.2s;
+    }
+
+    .expense-item:hover {
+      border-color: #3a3a5a;
+    }
+
+    .expense-info h3 {
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+
+    .expense-info p {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .expense-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .expense-amount {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--green);
+    }
+
+    .delete-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1.2rem;
+      padding: 4px;
+      border-radius: 6px;
+      transition: color 0.2s, background 0.2s;
+    }
+
+    .delete-btn:hover {
+      color: var(--red);
+      background: rgba(233, 69, 96, 0.1);
+    }
+
+    /* Balances */
+    .balance-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .balance-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .balance-card .name {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .balance-card .total-spent {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .balance-card .amount {
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+
+    .amount.positive { color: var(--green); }
+    .amount.negative { color: var(--red); }
+    .amount.zero { color: var(--muted); }
+
+    /* Settlements */
+    .settlements {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .settlements h2 {
+      margin-bottom: 16px;
+      font-size: 1.1rem;
+    }
+
+    .settlement-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .settlement-item:last-child {
+      border-bottom: none;
+    }
+
+    .settlement-arrow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.95rem;
+    }
+
+    .settlement-arrow .from { color: var(--red); font-weight: 600; }
+    .settlement-arrow .to { color: var(--green); font-weight: 600; }
+    .settlement-arrow .arrow { color: var(--muted); }
+
+    .settlement-amount {
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+    }
+
+    .empty-state .icon {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+    }
+
+    .total-banner {
+      background: linear-gradient(135deg, var(--accent2), #1a1a2e);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .total-banner .label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .total-banner .value {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    .actions-bar {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .actions-bar .btn { flex: 1; }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--accent);
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 500px) {
+      .name-grid { grid-template-columns: 1fr; }
+      .balance-cards { grid-template-columns: 1fr; }
+      .form-row { flex-direction: column; }
+      header h1 { font-size: 1.6rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Squad Splitter</h1>
+      <p>Track expenses & settle up with your crew</p>
+    </header>
+
+    <!-- Setup Screen -->
+    <div id="setup-screen">
+      <div class="setup-card">
+        <h2>Who's in the squad?</h2>
+        <div class="name-grid">
+          <input type="text" id="name1" placeholder="Person 1" maxlength="20" />
+          <input type="text" id="name2" placeholder="Person 2" maxlength="20" />
+          <input type="text" id="name3" placeholder="Person 3" maxlength="20" />
+          <input type="text" id="name4" placeholder="Person 4" maxlength="20" />
+        </div>
+        <button class="btn btn-primary" onclick="startApp()">Let's Go</button>
+      </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app-screen" class="hidden">
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('add')">Add Expense</button>
+        <button class="tab" onclick="switchTab('history')">History</button>
+        <button class="tab" onclick="switchTab('balances')">Balances</button>
+      </div>
+
+      <!-- Add Expense Tab -->
+      <div id="tab-add">
+        <div class="expense-form">
+          <h2>New Expense</h2>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Description</label>
+              <input type="text" id="exp-desc" placeholder="e.g. Dinner, Uber, Groceries" />
+            </div>
+            <div class="form-group" style="max-width: 160px;">
+              <label>Amount ($)</label>
+              <input type="number" id="exp-amount" placeholder="0.00" min="0" step="0.01" />
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label>Who paid?</label>
+            <select id="exp-payer"></select>
+          </div>
+          <div class="split-label">Split between</div>
+          <div class="split-checks" id="split-checks"></div>
+          <button class="btn btn-primary" onclick="addExpense()">Add Expense</button>
+        </div>
+      </div>
+
+      <!-- History Tab -->
+      <div id="tab-history" class="hidden">
+        <div class="total-banner">
+          <div class="label">Total Group Spending</div>
+          <div class="value" id="total-spending">$0.00</div>
+        </div>
+        <div class="expense-list" id="expense-list"></div>
+      </div>
+
+      <!-- Balances Tab -->
+      <div id="tab-balances" class="hidden">
+        <div class="balance-cards" id="balance-cards"></div>
+        <div class="settlements" id="settlements">
+          <h2>Who pays whom</h2>
+          <div id="settlement-list"></div>
+        </div>
+      </div>
+
+      <div class="actions-bar">
+        <button class="btn btn-small btn-outline" onclick="editNames()">Edit Names</button>
+        <button class="btn btn-small btn-danger" onclick="clearAll()">Clear All</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let people = [];
+    let expenses = [];
+
+    // Load from localStorage
+    function loadData() {
+      const saved = localStorage.getItem('squad-splitter');
+      if (saved) {
+        const data = JSON.parse(saved);
+        people = data.people || [];
+        expenses = data.expenses || [];
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem('squad-splitter', JSON.stringify({ people, expenses }));
+    }
+
+    function init() {
+      loadData();
+      if (people.length === 4) {
+        document.getElementById('setup-screen').classList.add('hidden');
+        document.getElementById('app-screen').classList.remove('hidden');
+        populateForm();
+        renderHistory();
+      }
+    }
+
+    function startApp() {
+      const names = [
+        document.getElementById('name1').value.trim(),
+        document.getElementById('name2').value.trim(),
+        document.getElementById('name3').value.trim(),
+        document.getElementById('name4').value.trim()
+      ];
+
+      if (names.some(n => n === '')) {
+        alert('Please enter all 4 names.');
+        return;
+      }
+
+      people = names;
+      saveData();
+
+      document.getElementById('setup-screen').classList.add('hidden');
+      document.getElementById('app-screen').classList.remove('hidden');
+      populateForm();
+    }
+
+    function populateForm() {
+      const payerSelect = document.getElementById('exp-payer');
+      payerSelect.innerHTML = people.map((p, i) => `<option value="${i}">${p}</option>`).join('');
+
+      const splitChecks = document.getElementById('split-checks');
+      splitChecks.innerHTML = people.map((p, i) =>
+        `<label><input type="checkbox" value="${i}" checked /> ${p}</label>`
+      ).join('');
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tabs .tab').forEach((t, i) => {
+        if ((tab === 'add' && i === 0) || (tab === 'history' && i === 1) || (tab === 'balances' && i === 2))
+          t.classList.add('active');
+      });
+
+      document.getElementById('tab-add').classList.toggle('hidden', tab !== 'add');
+      document.getElementById('tab-history').classList.toggle('hidden', tab !== 'history');
+      document.getElementById('tab-balances').classList.toggle('hidden', tab !== 'balances');
+
+      if (tab === 'history') renderHistory();
+      if (tab === 'balances') renderBalances();
+    }
+
+    function addExpense() {
+      const desc = document.getElementById('exp-desc').value.trim();
+      const amount = parseFloat(document.getElementById('exp-amount').value);
+      const payer = parseInt(document.getElementById('exp-payer').value);
+      const splitAmong = [...document.querySelectorAll('#split-checks input:checked')].map(c => parseInt(c.value));
+
+      if (!desc) { alert('Enter a description.'); return; }
+      if (!amount || amount <= 0) { alert('Enter a valid amount.'); return; }
+      if (splitAmong.length === 0) { alert('Select at least one person to split with.'); return; }
+
+      expenses.push({
+        id: Date.now(),
+        desc,
+        amount,
+        payer,
+        splitAmong,
+        date: new Date().toISOString()
+      });
+
+      saveData();
+
+      // Reset form
+      document.getElementById('exp-desc').value = '';
+      document.getElementById('exp-amount').value = '';
+      document.querySelectorAll('#split-checks input').forEach(c => c.checked = true);
+
+      // Flash confirmation
+      const btn = document.querySelector('.expense-form .btn-primary');
+      btn.textContent = 'Added!';
+      btn.style.background = 'var(--green)';
+      setTimeout(() => {
+        btn.textContent = 'Add Expense';
+        btn.style.background = '';
+      }, 1200);
+    }
+
+    function deleteExpense(id) {
+      if (!confirm('Delete this expense?')) return;
+      expenses = expenses.filter(e => e.id !== id);
+      saveData();
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const list = document.getElementById('expense-list');
+      const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+      document.getElementById('total-spending').textContent = '$' + total.toFixed(2);
+
+      if (expenses.length === 0) {
+        list.innerHTML = `<div class="empty-state"><div class="icon">&#128203;</div><p>No expenses yet.<br/>Add one to get started!</p></div>`;
+        return;
+      }
+
+      list.innerHTML = [...expenses].reverse().map(e => {
+        const date = new Date(e.date);
+        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const splitNames = e.splitAmong.map(i => people[i]).join(', ');
+        return `
+          <div class="expense-item">
+            <div class="expense-info">
+              <h3>${escapeHtml(e.desc)}</h3>
+              <p>${people[e.payer]} paid &middot; Split: ${splitNames} &middot; ${dateStr}</p>
+            </div>
+            <div class="expense-right">
+              <span class="expense-amount">$${e.amount.toFixed(2)}</span>
+              <button class="delete-btn" onclick="deleteExpense(${e.id})" title="Delete">&times;</button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function renderBalances() {
+      // Calculate net balances
+      const balances = people.map(() => 0);
+      const spent = people.map(() => 0);
+
+      expenses.forEach(e => {
+        const share = e.amount / e.splitAmong.length;
+        spent[e.payer] += e.amount;
+        e.splitAmong.forEach(i => {
+          balances[i] -= share;  // each person in the split owes their share
+        });
+        balances[e.payer] += e.amount; // payer gets credited for the full amount
+      });
+
+      // Render balance cards
+      const cardsDiv = document.getElementById('balance-cards');
+      cardsDiv.innerHTML = people.map((p, i) => {
+        const bal = balances[i];
+        const cls = bal > 0.01 ? 'positive' : bal < -0.01 ? 'negative' : 'zero';
+        const prefix = bal > 0.01 ? '+' : '';
+        return `
+          <div class="balance-card">
+            <div class="name">${escapeHtml(p)}</div>
+            <div class="amount ${cls}">${prefix}$${bal.toFixed(2)}</div>
+            <div class="total-spent">Spent: $${spent[i].toFixed(2)}</div>
+          </div>`;
+      }).join('');
+
+      // Calculate minimal settlements
+      const debts = balances.map((b, i) => ({ index: i, amount: b }));
+      const settlements = [];
+      const debtors = debts.filter(d => d.amount < -0.01).sort((a, b) => a.amount - b.amount);
+      const creditors = debts.filter(d => d.amount > 0.01).sort((a, b) => b.amount - a.amount);
+
+      let di = 0, ci = 0;
+      while (di < debtors.length && ci < creditors.length) {
+        const amount = Math.min(-debtors[di].amount, creditors[ci].amount);
+        if (amount > 0.01) {
+          settlements.push({
+            from: debtors[di].index,
+            to: creditors[ci].index,
+            amount
+          });
+        }
+        debtors[di].amount += amount;
+        creditors[ci].amount -= amount;
+        if (Math.abs(debtors[di].amount) < 0.01) di++;
+        if (Math.abs(creditors[ci].amount) < 0.01) ci++;
+      }
+
+      const settleDiv = document.getElementById('settlement-list');
+      if (settlements.length === 0) {
+        settleDiv.innerHTML = `<div class="empty-state"><div class="icon">&#9989;</div><p>All settled up!</p></div>`;
+      } else {
+        settleDiv.innerHTML = settlements.map(s => `
+          <div class="settlement-item">
+            <div class="settlement-arrow">
+              <span class="from">${escapeHtml(people[s.from])}</span>
+              <span class="arrow">&#10132;</span>
+              <span class="to">${escapeHtml(people[s.to])}</span>
+            </div>
+            <span class="settlement-amount">$${s.amount.toFixed(2)}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    function editNames() {
+      document.getElementById('name1').value = people[0];
+      document.getElementById('name2').value = people[1];
+      document.getElementById('name3').value = people[2];
+      document.getElementById('name4').value = people[3];
+      document.getElementById('app-screen').classList.add('hidden');
+      document.getElementById('setup-screen').classList.remove('hidden');
+    }
+
+    function clearAll() {
+      if (!confirm('Clear ALL expenses? This cannot be undone.')) return;
+      expenses = [];
+      saveData();
+      switchTab('history');
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    init();
+  </script>
+</body>
+</html>
