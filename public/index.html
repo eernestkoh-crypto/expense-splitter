@@ -429,6 +429,102 @@
       border-color: var(--accent);
     }
 
+    /* Starting Balances */
+    .balance-setup-card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 28px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .balance-setup-card h2 {
+      margin-bottom: 6px;
+      font-size: 1.1rem;
+    }
+
+    .balance-setup-card .subtitle {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+
+    .balance-input-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .balance-input-row .person-name {
+      width: 120px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+
+    .balance-input-row .direction-toggle {
+      display: flex;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .balance-input-row .direction-toggle button {
+      padding: 8px 12px;
+      border: none;
+      background: #111;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .balance-input-row .direction-toggle button.active-owed {
+      background: rgba(0, 200, 151, 0.15);
+      color: var(--green);
+    }
+
+    .balance-input-row .direction-toggle button.active-owes {
+      background: rgba(233, 69, 96, 0.15);
+      color: var(--red);
+    }
+
+    .balance-input-row input[type="number"] {
+      flex: 1;
+      padding: 10px 14px;
+      background: #111;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border 0.2s;
+      min-width: 0;
+    }
+
+    .balance-input-row input[type="number"]:focus {
+      border-color: var(--accent);
+    }
+
+    .skip-link {
+      display: block;
+      text-align: center;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: color 0.2s;
+      background: none;
+      border: none;
+      width: 100%;
+    }
+
+    .skip-link:hover { color: var(--text); }
+
     .hidden { display: none !important; }
 
     @media (max-width: 500px) {
@@ -457,6 +553,17 @@
           <input type="text" id="name4" placeholder="Person 4" maxlength="20" />
         </div>
         <button class="btn btn-primary" onclick="startApp()">Let's Go</button>
+      </div>
+    </div>
+
+    <!-- Starting Balances Screen -->
+    <div id="balances-screen" class="hidden">
+      <div class="balance-setup-card">
+        <h2>Outstanding Balances</h2>
+        <p class="subtitle">Enter any money owed from before you started tracking. Leave at $0 if starting fresh.</p>
+        <div id="balance-inputs"></div>
+        <button class="btn btn-primary" onclick="saveStartingBalances()">Continue</button>
+        <button class="skip-link" onclick="skipBalances()">Skip &mdash; starting fresh</button>
       </div>
     </div>
 
@@ -513,6 +620,7 @@
 
       <div class="actions-bar">
         <button class="btn btn-small btn-outline" onclick="editNames()">Edit Names</button>
+        <button class="btn btn-small btn-outline" onclick="editStartingBalances()">Adjust Balances</button>
         <button class="btn btn-small btn-danger" onclick="clearAll()">Clear All</button>
       </div>
     </div>
@@ -521,6 +629,7 @@
   <script>
     let people = [];
     let expenses = [];
+    let startingBalances = [0, 0, 0, 0]; // positive = owed money, negative = owes money
 
     // Load from localStorage
     function loadData() {
@@ -529,18 +638,24 @@
         const data = JSON.parse(saved);
         people = data.people || [];
         expenses = data.expenses || [];
+        startingBalances = data.startingBalances || [0, 0, 0, 0];
       }
     }
 
     function saveData() {
-      localStorage.setItem('squad-splitter', JSON.stringify({ people, expenses }));
+      localStorage.setItem('squad-splitter', JSON.stringify({ people, expenses, startingBalances }));
+    }
+
+    function showScreen(screen) {
+      ['setup-screen', 'balances-screen', 'app-screen'].forEach(id => {
+        document.getElementById(id).classList.toggle('hidden', id !== screen);
+      });
     }
 
     function init() {
       loadData();
       if (people.length === 4) {
-        document.getElementById('setup-screen').classList.add('hidden');
-        document.getElementById('app-screen').classList.remove('hidden');
+        showScreen('app-screen');
         populateForm();
         renderHistory();
       }
@@ -561,10 +676,61 @@
 
       people = names;
       saveData();
+      showBalancesSetup();
+    }
 
-      document.getElementById('setup-screen').classList.add('hidden');
-      document.getElementById('app-screen').classList.remove('hidden');
+    // --- Starting Balances ---
+    function showBalancesSetup() {
+      showScreen('balances-screen');
+      const container = document.getElementById('balance-inputs');
+      container.innerHTML = people.map((name, i) => {
+        const val = Math.abs(startingBalances[i]);
+        const isOwes = startingBalances[i] < 0;
+        return `
+          <div class="balance-input-row" data-index="${i}">
+            <span class="person-name">${escapeHtml(name)}</span>
+            <div class="direction-toggle">
+              <button type="button" onclick="toggleDirection(${i}, 'owed')" class="${!isOwes ? 'active-owed' : ''}">is owed</button>
+              <button type="button" onclick="toggleDirection(${i}, 'owes')" class="${isOwes ? 'active-owes' : ''}">owes</button>
+            </div>
+            <input type="number" id="start-bal-${i}" placeholder="0.00" min="0" step="0.01" value="${val || ''}" />
+          </div>`;
+      }).join('');
+    }
+
+    function toggleDirection(index, dir) {
+      const row = document.querySelector(`.balance-input-row[data-index="${index}"]`);
+      const btns = row.querySelectorAll('.direction-toggle button');
+      btns[0].className = dir === 'owed' ? 'active-owed' : '';
+      btns[1].className = dir === 'owes' ? 'active-owes' : '';
+    }
+
+    function getBalanceDirection(index) {
+      const row = document.querySelector(`.balance-input-row[data-index="${index}"]`);
+      return row.querySelector('.direction-toggle button.active-owes') ? -1 : 1;
+    }
+
+    function saveStartingBalances() {
+      startingBalances = people.map((_, i) => {
+        const val = parseFloat(document.getElementById(`start-bal-${i}`).value) || 0;
+        return val * getBalanceDirection(i);
+      });
+      saveData();
+      showScreen('app-screen');
       populateForm();
+      renderHistory();
+    }
+
+    function skipBalances() {
+      startingBalances = [0, 0, 0, 0];
+      saveData();
+      showScreen('app-screen');
+      populateForm();
+      renderHistory();
+    }
+
+    function editStartingBalances() {
+      showBalancesSetup();
     }
 
     function populateForm() {
@@ -664,8 +830,8 @@
     }
 
     function renderBalances() {
-      // Calculate net balances
-      const balances = people.map(() => 0);
+      // Start with pre-existing balances
+      const balances = startingBalances.map(b => b);
       const spent = people.map(() => 0);
 
       expenses.forEach(e => {
@@ -735,8 +901,7 @@
       document.getElementById('name2').value = people[1];
       document.getElementById('name3').value = people[2];
       document.getElementById('name4').value = people[3];
-      document.getElementById('app-screen').classList.add('hidden');
-      document.getElementById('setup-screen').classList.remove('hidden');
+      showScreen('setup-screen');
     }
 
     function clearAll() {
