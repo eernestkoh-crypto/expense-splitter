@@ -631,19 +631,30 @@
     let expenses = [];
     let startingBalances = [0, 0, 0, 0]; // positive = owed money, negative = owes money
 
-    // Load from localStorage
-    function loadData() {
-      const saved = localStorage.getItem('squad-splitter');
-      if (saved) {
-        const data = JSON.parse(saved);
+    // Load from backend API
+    async function loadData() {
+      try {
+        const res = await fetch('/api/data');
+        const data = await res.json();
         people = data.people || [];
         expenses = data.expenses || [];
         startingBalances = data.startingBalances || [0, 0, 0, 0];
+      } catch (err) {
+        console.error('Failed to load data:', err);
       }
     }
 
-    function saveData() {
-      localStorage.setItem('squad-splitter', JSON.stringify({ people, expenses, startingBalances }));
+    async function saveData() {
+      try {
+        await fetch('/api/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ people, expenses, startingBalances })
+        });
+      } catch (err) {
+        console.error('Failed to save data:', err);
+        alert('Failed to save. Please try again.');
+      }
     }
 
     function showScreen(screen) {
@@ -652,8 +663,8 @@
       });
     }
 
-    function init() {
-      loadData();
+    async function init() {
+      await loadData();
       if (people.length === 4) {
         showScreen('app-screen');
         populateForm();
@@ -661,7 +672,7 @@
       }
     }
 
-    function startApp() {
+    async function startApp() {
       const names = [
         document.getElementById('name1').value.trim(),
         document.getElementById('name2').value.trim(),
@@ -675,7 +686,7 @@
       }
 
       people = names;
-      saveData();
+      await saveData();
       showBalancesSetup();
     }
 
@@ -710,20 +721,20 @@
       return row.querySelector('.direction-toggle button.active-owes') ? -1 : 1;
     }
 
-    function saveStartingBalances() {
+    async function saveStartingBalances() {
       startingBalances = people.map((_, i) => {
         const val = parseFloat(document.getElementById(`start-bal-${i}`).value) || 0;
         return val * getBalanceDirection(i);
       });
-      saveData();
+      await saveData();
       showScreen('app-screen');
       populateForm();
       renderHistory();
     }
 
-    function skipBalances() {
+    async function skipBalances() {
       startingBalances = [0, 0, 0, 0];
-      saveData();
+      await saveData();
       showScreen('app-screen');
       populateForm();
       renderHistory();
@@ -758,7 +769,7 @@
       if (tab === 'balances') renderBalances();
     }
 
-    function addExpense() {
+    async function addExpense() {
       const desc = document.getElementById('exp-desc').value.trim();
       const amount = parseFloat(document.getElementById('exp-amount').value);
       const payer = parseInt(document.getElementById('exp-payer').value);
@@ -777,7 +788,7 @@
         date: new Date().toISOString()
       });
 
-      saveData();
+      await saveData();
 
       // Reset form
       document.getElementById('exp-desc').value = '';
@@ -794,10 +805,10 @@
       }, 1200);
     }
 
-    function deleteExpense(id) {
+    async function deleteExpense(id) {
       if (!confirm('Delete this expense?')) return;
       expenses = expenses.filter(e => e.id !== id);
-      saveData();
+      await saveData();
       renderHistory();
     }
 
@@ -904,10 +915,10 @@
       showScreen('setup-screen');
     }
 
-    function clearAll() {
+    async function clearAll() {
       if (!confirm('Clear ALL expenses? This cannot be undone.')) return;
       expenses = [];
-      saveData();
+      await saveData();
       switchTab('history');
     }
 
