@@ -560,7 +560,7 @@
     <div id="balances-screen" class="hidden">
       <div class="balance-setup-card">
         <h2>Outstanding Balances</h2>
-        <p class="subtitle">Enter any money owed from before you started tracking. Leave at $0 if starting fresh.</p>
+        <p class="subtitle">Enter any money owed from before you started tracking. Leave at ¥0 if starting fresh.</p>
         <div id="balance-inputs"></div>
         <button class="btn btn-primary" onclick="saveStartingBalances()">Continue</button>
         <button class="skip-link" onclick="skipBalances()">Skip &mdash; starting fresh</button>
@@ -586,8 +586,8 @@
               <input type="text" id="exp-desc" placeholder="e.g. Dinner, Uber, Groceries" />
             </div>
             <div class="form-group" style="max-width: 160px;">
-              <label>Amount ($)</label>
-              <input type="number" id="exp-amount" placeholder="0.00" min="0" step="0.01" />
+              <label>Amount (¥)</label>
+              <input type="number" id="exp-amount" placeholder="0" min="0" step="1" />
             </div>
           </div>
           <div class="form-group" style="margin-bottom: 14px;">
@@ -604,7 +604,7 @@
       <div id="tab-history" class="hidden">
         <div class="total-banner">
           <div class="label">Total Group Spending</div>
-          <div class="value" id="total-spending">$0.00</div>
+          <div class="value" id="total-spending">¥0</div>
         </div>
         <div class="expense-list" id="expense-list"></div>
       </div>
@@ -703,7 +703,7 @@
               <button type="button" onclick="toggleDirection(${i}, 'owed')" class="${!isOwes ? 'active-owed' : ''}">is owed</button>
               <button type="button" onclick="toggleDirection(${i}, 'owes')" class="${isOwes ? 'active-owes' : ''}">owes</button>
             </div>
-            <input type="number" id="start-bal-${i}" placeholder="0.00" min="0" step="0.01" value="${val || ''}" />
+            <input type="number" id="start-bal-${i}" placeholder="0" min="0" step="1" value="${val || ''}" />
           </div>`;
       }).join('');
     }
@@ -814,7 +814,7 @@
     function renderHistory() {
       const list = document.getElementById('expense-list');
       const total = expenses.reduce((sum, e) => sum + e.amount, 0);
-      document.getElementById('total-spending').textContent = '$' + total.toFixed(2);
+      document.getElementById('total-spending').textContent = '¥' + total.toFixed(0);
 
       if (expenses.length === 0) {
         list.innerHTML = `<div class="empty-state"><div class="icon">&#128203;</div><p>No expenses yet.<br/>Add one to get started!</p></div>`;
@@ -832,7 +832,7 @@
               <p>${people[e.payer]} paid &middot; Split: ${splitNames} &middot; ${dateStr}</p>
             </div>
             <div class="expense-right">
-              <span class="expense-amount">$${e.amount.toFixed(2)}</span>
+              <span class="expense-amount">¥${e.amount.toFixed(0)}</span>
               <button class="delete-btn" onclick="deleteExpense(${e.id})" title="Delete">&times;</button>
             </div>
           </div>`;
@@ -862,8 +862,8 @@
         return `
           <div class="balance-card">
             <div class="name">${escapeHtml(p)}</div>
-            <div class="amount ${cls}">${prefix}$${bal.toFixed(2)}</div>
-            <div class="total-spent">Spent: $${spent[i].toFixed(2)}</div>
+            <div class="amount ${cls}">${prefix}¥${bal.toFixed(0)}</div>
+            <div class="total-spent">Spent: ¥${spent[i].toFixed(0)}</div>
           </div>`;
       }).join('');
 
@@ -900,7 +900,7 @@
               <span class="arrow">&#10132;</span>
               <span class="to">${escapeHtml(people[s.to])}</span>
             </div>
-            <span class="settlement-amount">$${s.amount.toFixed(2)}</span>
+            <span class="settlement-amount">¥${s.amount.toFixed(0)}</span>
           </div>
         `).join('');
       }
