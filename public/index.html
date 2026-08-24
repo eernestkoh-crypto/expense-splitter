@@ -61,17 +61,32 @@
     }
 
     .setup-card h2 {
-      margin-bottom: 16px;
+      margin-bottom: 6px;
       font-size: 1.1rem;
     }
 
-    .name-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
+    .setup-card .subtitle {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-bottom: 20px;
+      line-height: 1.4;
     }
 
-    .name-grid input {
+    .people-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .person-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .person-row input {
+      flex: 1;
+      min-width: 0;
       padding: 12px 16px;
       background: #111;
       border: 1px solid var(--border);
@@ -82,8 +97,57 @@
       transition: border 0.2s;
     }
 
-    .name-grid input:focus {
+    .person-row input:focus {
       border-color: var(--accent);
+    }
+
+    .row-remove {
+      flex-shrink: 0;
+      width: 38px;
+      height: 38px;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--muted);
+      font-size: 1.2rem;
+      line-height: 1;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
+    }
+
+    .row-remove:hover:not(:disabled) {
+      color: var(--red);
+      border-color: var(--red);
+      background: rgba(233, 69, 96, 0.1);
+    }
+
+    .row-remove:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .add-person-btn {
+      margin-top: 12px;
+      padding: 10px;
+      width: 100%;
+      background: transparent;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .add-person-btn:hover:not(:disabled) {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+
+    .add-person-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
     }
 
     .btn {
@@ -98,6 +162,7 @@
 
     .btn:hover { transform: translateY(-1px); }
     .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
     .btn-primary {
       background: linear-gradient(135deg, var(--accent), #533483);
@@ -200,12 +265,31 @@
     }
 
     .split-label {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
       font-size: 0.8rem;
       color: var(--muted);
       margin-bottom: 8px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
+
+    .split-toggle-all {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      padding: 0;
+      transition: color 0.2s;
+    }
+
+    .split-toggle-all:hover { color: var(--accent); }
 
     .split-checks {
       display: flex;
@@ -253,6 +337,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 12px;
       transition: border-color 0.2s;
     }
 
@@ -260,9 +345,12 @@
       border-color: #3a3a5a;
     }
 
+    .expense-info { min-width: 0; }
+
     .expense-info h3 {
       font-size: 1rem;
       margin-bottom: 4px;
+      word-break: break-word;
     }
 
     .expense-info p {
@@ -274,6 +362,7 @@
       display: flex;
       align-items: center;
       gap: 14px;
+      flex-shrink: 0;
     }
 
     .expense-amount {
@@ -301,7 +390,7 @@
     /* Balances */
     .balance-cards {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 12px;
       margin-bottom: 24px;
     }
@@ -320,6 +409,7 @@
       margin-bottom: 6px;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      word-break: break-word;
     }
 
     .balance-card .total-spent {
@@ -329,7 +419,7 @@
     }
 
     .balance-card .amount {
-      font-size: 1.6rem;
+      font-size: 1.4rem;
       font-weight: 700;
     }
 
@@ -354,6 +444,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 12px;
       padding: 14px 0;
       border-bottom: 1px solid var(--border);
     }
@@ -367,6 +458,8 @@
       align-items: center;
       gap: 10px;
       font-size: 0.95rem;
+      min-width: 0;
+      flex-wrap: wrap;
     }
 
     .settlement-arrow .from { color: var(--red); font-weight: 600; }
@@ -376,6 +469,7 @@
     .settlement-amount {
       font-weight: 700;
       font-size: 1.05rem;
+      flex-shrink: 0;
     }
 
     .empty-state {
@@ -415,9 +509,10 @@
       display: flex;
       gap: 10px;
       margin-top: 20px;
+      flex-wrap: wrap;
     }
 
-    .actions-bar .btn { flex: 1; }
+    .actions-bar .btn { flex: 1; min-width: 120px; }
 
     .btn-outline {
       background: transparent;
@@ -462,6 +557,7 @@
       font-weight: 600;
       font-size: 0.95rem;
       flex-shrink: 0;
+      word-break: break-word;
     }
 
     .balance-input-row .direction-toggle {
@@ -525,13 +621,38 @@
 
     .skip-link:hover { color: var(--text); }
 
+    /* Toast */
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%) translateY(120%);
+      max-width: min(460px, calc(100vw - 32px));
+      padding: 14px 20px;
+      border-radius: 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.9rem;
+      line-height: 1.4;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+      transition: transform 0.25s ease, opacity 0.25s ease;
+      opacity: 0;
+      z-index: 100;
+    }
+
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .toast.error { border-color: var(--red); }
+    .toast.success { border-color: var(--green); }
+
     .hidden { display: none !important; }
 
     @media (max-width: 500px) {
-      .name-grid { grid-template-columns: 1fr; }
-      .balance-cards { grid-template-columns: 1fr; }
+      .balance-cards { grid-template-columns: 1fr 1fr; }
       .form-row { flex-direction: column; }
       header h1 { font-size: 1.6rem; }
+      .balance-input-row { flex-wrap: wrap; }
+      .balance-input-row .person-name { width: 100%; }
     }
   </style>
 </head>
@@ -539,20 +660,18 @@
   <div class="container">
     <header>
       <h1>Squad Splitter</h1>
-      <p>Track expenses & settle up with your crew</p>
+      <p>Track expenses &amp; settle up with your crew</p>
     </header>
 
     <!-- Setup Screen -->
-    <div id="setup-screen">
+    <div id="setup-screen" class="hidden">
       <div class="setup-card">
         <h2>Who's in the squad?</h2>
-        <div class="name-grid">
-          <input type="text" id="name1" placeholder="Person 1" maxlength="20" />
-          <input type="text" id="name2" placeholder="Person 2" maxlength="20" />
-          <input type="text" id="name3" placeholder="Person 3" maxlength="20" />
-          <input type="text" id="name4" placeholder="Person 4" maxlength="20" />
-        </div>
-        <button class="btn btn-primary" onclick="startApp()">Let's Go</button>
+        <p class="subtitle">Add anywhere from 2 to 20 people. You can change this later.</p>
+        <div class="people-rows" id="people-rows"></div>
+        <button type="button" class="add-person-btn" id="add-person-btn" onclick="addPersonRow()">+ Add person</button>
+        <button class="btn btn-primary" id="setup-save-btn" onclick="savePeople()">Let's Go</button>
+        <button class="skip-link hidden" id="setup-cancel" onclick="showScreen('app-screen')">Cancel</button>
       </div>
     </div>
 
@@ -560,9 +679,9 @@
     <div id="balances-screen" class="hidden">
       <div class="balance-setup-card">
         <h2>Outstanding Balances</h2>
-        <p class="subtitle">Enter any money owed from before you started tracking. Leave at ¥0 if starting fresh.</p>
+        <p class="subtitle">Enter any money owed from before you started tracking. Leave at &#3647;0 if starting fresh.</p>
         <div id="balance-inputs"></div>
-        <button class="btn btn-primary" onclick="saveStartingBalances()">Continue</button>
+        <button class="btn btn-primary" id="balances-save-btn" onclick="saveStartingBalances()">Continue</button>
         <button class="skip-link" onclick="skipBalances()">Skip &mdash; starting fresh</button>
       </div>
     </div>
@@ -571,9 +690,9 @@
     <div id="app-screen" class="hidden">
       <!-- Tabs -->
       <div class="tabs">
-        <button class="tab active" onclick="switchTab('add')">Add Expense</button>
-        <button class="tab" onclick="switchTab('history')">History</button>
-        <button class="tab" onclick="switchTab('balances')">Balances</button>
+        <button class="tab active" data-tab="add" onclick="switchTab('add')">Add Expense</button>
+        <button class="tab" data-tab="history" onclick="switchTab('history')">History</button>
+        <button class="tab" data-tab="balances" onclick="switchTab('balances')">Balances</button>
       </div>
 
       <!-- Add Expense Tab -->
@@ -582,21 +701,24 @@
           <h2>New Expense</h2>
           <div class="form-row">
             <div class="form-group">
-              <label>Description</label>
-              <input type="text" id="exp-desc" placeholder="e.g. Dinner, Uber, Groceries" />
+              <label for="exp-desc">Description</label>
+              <input type="text" id="exp-desc" placeholder="e.g. Dinner, Grab, Groceries" maxlength="100" />
             </div>
             <div class="form-group" style="max-width: 160px;">
-              <label>Amount (¥)</label>
-              <input type="number" id="exp-amount" placeholder="0" min="0" step="1" />
+              <label for="exp-amount">Amount (&#3647;)</label>
+              <input type="number" id="exp-amount" placeholder="0.00" min="0" step="0.01" />
             </div>
           </div>
           <div class="form-group" style="margin-bottom: 14px;">
-            <label>Who paid?</label>
+            <label for="exp-payer">Who paid?</label>
             <select id="exp-payer"></select>
           </div>
-          <div class="split-label">Split between</div>
+          <div class="split-label">
+            <span>Split between</span>
+            <button type="button" class="split-toggle-all" onclick="toggleAllSplit()">Toggle all</button>
+          </div>
           <div class="split-checks" id="split-checks"></div>
-          <button class="btn btn-primary" onclick="addExpense()">Add Expense</button>
+          <button class="btn btn-primary" id="add-expense-btn" onclick="addExpense()">Add Expense</button>
         </div>
       </div>
 
@@ -604,7 +726,7 @@
       <div id="tab-history" class="hidden">
         <div class="total-banner">
           <div class="label">Total Group Spending</div>
-          <div class="value" id="total-spending">¥0</div>
+          <div class="value" id="total-spending">&#3647;0.00</div>
         </div>
         <div class="expense-list" id="expense-list"></div>
       </div>
@@ -619,40 +741,89 @@
       </div>
 
       <div class="actions-bar">
-        <button class="btn btn-small btn-outline" onclick="editNames()">Edit Names</button>
+        <button class="btn btn-small btn-outline" onclick="editPeople()">Edit Squad</button>
+        <button class="btn btn-small btn-outline" onclick="editStartingBalances()">Starting Balances</button>
         <button class="btn btn-small btn-danger" onclick="clearAll()">Clear All</button>
       </div>
     </div>
   </div>
 
-  <script>
-    let people = [];
-    let expenses = [];
-    let startingBalances = [0, 0, 0, 0]; // positive = owed money, negative = owes money
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-    // Load from backend API
-    async function loadData() {
-      try {
-        const res = await fetch('/api/data');
-        const data = await res.json();
-        people = data.people || [];
-        expenses = data.expenses || [];
-        startingBalances = data.startingBalances || [0, 0, 0, 0];
-      } catch (err) {
-        console.error('Failed to load data:', err);
-      }
+  <script>
+    const CURRENCY = '฿'; // Thai baht
+    const MIN_PEOPLE = 2;
+    const MAX_PEOPLE = 20;
+    const EPSILON = 0.005; // half a satang — below this, treat as settled
+
+    // Server-owned state. People carry stable ids, and expenses reference those
+    // ids rather than array positions, so adding or removing someone never
+    // re-points an existing expense at the wrong person.
+    let state = { people: [], expenses: [] };
+
+    // Working copy for the setup screen only, committed via savePeople().
+    let draftPeople = [];
+
+    function money(n) {
+      const rounded = Math.abs(n) < EPSILON ? 0 : n;
+      return CURRENCY + rounded.toFixed(2);
     }
 
-    async function saveData() {
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text == null ? '' : String(text);
+      return div.innerHTML;
+    }
+
+    function personName(id) {
+      const p = state.people.find(x => x.id === id);
+      return p ? p.name : 'Unknown';
+    }
+
+    // --- API ---
+
+    async function api(method, url, body) {
+      const res = await fetch(url, {
+        method,
+        headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
+        body: body === undefined ? undefined : JSON.stringify(body)
+      });
+      let payload = null;
+      try { payload = await res.json(); } catch (_) { /* non-JSON response */ }
+      if (!res.ok) {
+        throw new Error((payload && payload.error) || `Request failed (${res.status})`);
+      }
+      return payload;
+    }
+
+    // Every write endpoint returns the full updated document, so the client
+    // always ends up in sync with what the server actually stored.
+    function applyState(data) {
+      if (!data || !Array.isArray(data.people) || !Array.isArray(data.expenses)) return;
+      state = { people: data.people, expenses: data.expenses };
+    }
+
+    let toastTimer = null;
+    function showToast(message, type) {
+      const el = document.getElementById('toast');
+      el.textContent = message;
+      el.className = 'toast show' + (type ? ' ' + type : '');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { el.className = 'toast'; }, 3500);
+    }
+
+    // Disables the button while the request is in flight so a double-click
+    // can't submit the same expense twice.
+    async function withButton(id, fn) {
+      const btn = document.getElementById(id);
+      if (btn) btn.disabled = true;
       try {
-        await fetch('/api/data', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ people, expenses, startingBalances })
-        });
+        return await fn();
       } catch (err) {
-        console.error('Failed to save data:', err);
-        alert('Failed to save. Please try again.');
+        showToast(err.message, 'error');
+        return null;
+      } finally {
+        if (btn) btn.disabled = false;
       }
     }
 
@@ -663,268 +834,343 @@
     }
 
     async function init() {
-      await loadData();
-      if (people.length === 4) {
+      try {
+        applyState(await api('GET', '/api/data'));
+      } catch (err) {
+        showToast('Could not load data: ' + err.message, 'error');
+      }
+      if (state.people.length >= MIN_PEOPLE) {
         showScreen('app-screen');
-        populateForm();
-        renderHistory();
+        renderApp();
+      } else {
+        editPeople();
       }
     }
 
-    async function startApp() {
-      const names = [
-        document.getElementById('name1').value.trim(),
-        document.getElementById('name2').value.trim(),
-        document.getElementById('name3').value.trim(),
-        document.getElementById('name4').value.trim()
-      ];
+    function renderApp() {
+      populateForm();
+      renderHistory();
+      renderBalances();
+    }
 
-      if (names.some(n => n === '')) {
-        alert('Please enter all 4 names.');
+    // --- Setup: people ---
+
+    function editPeople() {
+      draftPeople = state.people.length
+        ? state.people.map(p => ({ id: p.id, name: p.name }))
+        : [{ name: '' }, { name: '' }];
+      const isFirstRun = state.people.length === 0;
+      document.getElementById('setup-save-btn').textContent = isFirstRun ? "Let's Go" : 'Save Squad';
+      document.getElementById('setup-cancel').classList.toggle('hidden', isFirstRun);
+      showScreen('setup-screen');
+      renderPeopleRows();
+    }
+
+    function renderPeopleRows() {
+      const container = document.getElementById('people-rows');
+      container.innerHTML = draftPeople.map((p, i) => `
+        <div class="person-row">
+          <input type="text" maxlength="20" placeholder="Person ${i + 1}"
+                 value="${escapeHtml(p.name)}" oninput="updatePersonName(${i}, this.value)" />
+          <button type="button" class="row-remove" title="Remove"
+                  onclick="removePersonRow(${i})" ${draftPeople.length <= MIN_PEOPLE ? 'disabled' : ''}>&times;</button>
+        </div>`).join('');
+      document.getElementById('add-person-btn').disabled = draftPeople.length >= MAX_PEOPLE;
+    }
+
+    // Mutates the draft without re-rendering, so the input keeps focus.
+    function updatePersonName(index, value) {
+      if (draftPeople[index]) draftPeople[index].name = value;
+    }
+
+    function addPersonRow() {
+      if (draftPeople.length >= MAX_PEOPLE) return;
+      draftPeople.push({ name: '' });
+      renderPeopleRows();
+      const inputs = document.querySelectorAll('#people-rows input');
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    }
+
+    function removePersonRow(index) {
+      if (draftPeople.length <= MIN_PEOPLE) return;
+      draftPeople.splice(index, 1);
+      renderPeopleRows();
+    }
+
+    async function savePeople() {
+      const people = draftPeople.map(p => ({ id: p.id, name: p.name.trim() }));
+
+      if (people.some(p => !p.name)) {
+        showToast('Every person needs a name.', 'error');
+        return;
+      }
+      const lowered = people.map(p => p.name.toLowerCase());
+      if (new Set(lowered).size !== lowered.length) {
+        showToast('Two people have the same name — make them distinct.', 'error');
         return;
       }
 
-      people = names;
-      await saveData();
-      showBalancesSetup();
+      // Preserve each existing person's starting balance across a rename.
+      const balanceById = new Map(state.people.map(p => [p.id, p.startingBalance]));
+      const payload = people.map(p => ({
+        id: p.id,
+        name: p.name,
+        startingBalance: p.id && balanceById.has(p.id) ? balanceById.get(p.id) : 0
+      }));
+
+      const isFirstRun = state.people.length === 0;
+      const result = await withButton('setup-save-btn', () => api('PUT', '/api/people', { people: payload }));
+      if (!result) return;
+      applyState(result);
+
+      if (isFirstRun) {
+        showBalancesSetup();
+      } else {
+        showScreen('app-screen');
+        renderApp();
+        showToast('Squad updated.', 'success');
+      }
     }
 
-    // --- Starting Balances ---
+    // --- Setup: starting balances ---
+
     function showBalancesSetup() {
       showScreen('balances-screen');
-      const container = document.getElementById('balance-inputs');
-      container.innerHTML = people.map((name, i) => {
-        const val = Math.abs(startingBalances[i]);
-        const isOwes = startingBalances[i] < 0;
+      document.getElementById('balance-inputs').innerHTML = state.people.map(p => {
+        const val = Math.abs(p.startingBalance || 0);
+        const owes = (p.startingBalance || 0) < 0;
         return `
-          <div class="balance-input-row" data-index="${i}">
-            <span class="person-name">${escapeHtml(name)}</span>
+          <div class="balance-input-row" data-id="${escapeHtml(p.id)}">
+            <span class="person-name">${escapeHtml(p.name)}</span>
             <div class="direction-toggle">
-              <button type="button" onclick="toggleDirection(${i}, 'owed')" class="${!isOwes ? 'active-owed' : ''}">is owed</button>
-              <button type="button" onclick="toggleDirection(${i}, 'owes')" class="${isOwes ? 'active-owes' : ''}">owes</button>
+              <button type="button" class="${owes ? '' : 'active-owed'}" onclick="toggleDirection(this, 'owed')">is owed</button>
+              <button type="button" class="${owes ? 'active-owes' : ''}" onclick="toggleDirection(this, 'owes')">owes</button>
             </div>
-            <input type="number" id="start-bal-${i}" placeholder="0" min="0" step="1" value="${val || ''}" />
+            <input type="number" placeholder="0.00" min="0" step="0.01" value="${val ? val.toFixed(2) : ''}" />
           </div>`;
       }).join('');
-    }
-
-    function toggleDirection(index, dir) {
-      const row = document.querySelector(`.balance-input-row[data-index="${index}"]`);
-      const btns = row.querySelectorAll('.direction-toggle button');
-      btns[0].className = dir === 'owed' ? 'active-owed' : '';
-      btns[1].className = dir === 'owes' ? 'active-owes' : '';
-    }
-
-    function getBalanceDirection(index) {
-      const row = document.querySelector(`.balance-input-row[data-index="${index}"]`);
-      return row.querySelector('.direction-toggle button.active-owes') ? -1 : 1;
-    }
-
-    async function saveStartingBalances() {
-      startingBalances = people.map((_, i) => {
-        const val = parseFloat(document.getElementById(`start-bal-${i}`).value) || 0;
-        return val * getBalanceDirection(i);
-      });
-      await saveData();
-      showScreen('app-screen');
-      populateForm();
-      renderHistory();
-    }
-
-    async function skipBalances() {
-      startingBalances = [0, 0, 0, 0];
-      await saveData();
-      showScreen('app-screen');
-      populateForm();
-      renderHistory();
     }
 
     function editStartingBalances() {
       showBalancesSetup();
     }
 
-    function populateForm() {
-      const payerSelect = document.getElementById('exp-payer');
-      payerSelect.innerHTML = people.map((p, i) => `<option value="${i}">${p}</option>`).join('');
+    function toggleDirection(btn, dir) {
+      const btns = btn.parentElement.querySelectorAll('button');
+      btns[0].className = dir === 'owed' ? 'active-owed' : '';
+      btns[1].className = dir === 'owes' ? 'active-owes' : '';
+    }
 
-      const splitChecks = document.getElementById('split-checks');
-      splitChecks.innerHTML = people.map((p, i) =>
-        `<label><input type="checkbox" value="${i}" checked /> ${p}</label>`
-      ).join('');
+    async function saveStartingBalances() {
+      const payload = [];
+      for (const row of document.querySelectorAll('.balance-input-row')) {
+        const person = state.people.find(p => p.id === row.dataset.id);
+        if (!person) continue;
+        const raw = row.querySelector('input[type="number"]').value;
+        const val = raw === '' ? 0 : Number(raw);
+        if (!Number.isFinite(val) || val < 0) {
+          showToast(`Enter a valid amount for ${person.name}.`, 'error');
+          return;
+        }
+        const sign = row.querySelector('.direction-toggle button.active-owes') ? -1 : 1;
+        payload.push({ id: person.id, name: person.name, startingBalance: val * sign });
+      }
+
+      const result = await withButton('balances-save-btn', () => api('PUT', '/api/people', { people: payload }));
+      if (!result) return;
+      applyState(result);
+      showScreen('app-screen');
+      renderApp();
+      showToast('Starting balances saved.', 'success');
+    }
+
+    async function skipBalances() {
+      const payload = state.people.map(p => ({ id: p.id, name: p.name, startingBalance: 0 }));
+      const result = await withButton('balances-save-btn', () => api('PUT', '/api/people', { people: payload }));
+      if (!result) return;
+      applyState(result);
+      showScreen('app-screen');
+      renderApp();
+    }
+
+    // --- Expenses ---
+
+    function populateForm() {
+      document.getElementById('exp-payer').innerHTML = state.people
+        .map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
+
+      document.getElementById('split-checks').innerHTML = state.people
+        .map(p => `<label><input type="checkbox" value="${escapeHtml(p.id)}" checked /> ${escapeHtml(p.name)}</label>`)
+        .join('');
+    }
+
+    function toggleAllSplit() {
+      const boxes = [...document.querySelectorAll('#split-checks input')];
+      const target = !boxes.every(b => b.checked);
+      boxes.forEach(b => { b.checked = target; });
     }
 
     function switchTab(tab) {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tabs .tab').forEach((t, i) => {
-        if ((tab === 'add' && i === 0) || (tab === 'history' && i === 1) || (tab === 'balances' && i === 2))
-          t.classList.add('active');
+      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+      ['add', 'history', 'balances'].forEach(name => {
+        document.getElementById('tab-' + name).classList.toggle('hidden', name !== tab);
       });
-
-      document.getElementById('tab-add').classList.toggle('hidden', tab !== 'add');
-      document.getElementById('tab-history').classList.toggle('hidden', tab !== 'history');
-      document.getElementById('tab-balances').classList.toggle('hidden', tab !== 'balances');
-
       if (tab === 'history') renderHistory();
       if (tab === 'balances') renderBalances();
     }
 
     async function addExpense() {
-      const desc = document.getElementById('exp-desc').value.trim();
-      const amount = parseFloat(document.getElementById('exp-amount').value);
-      const payer = parseInt(document.getElementById('exp-payer').value);
-      const splitAmong = [...document.querySelectorAll('#split-checks input:checked')].map(c => parseInt(c.value));
+      const descEl = document.getElementById('exp-desc');
+      const amountEl = document.getElementById('exp-amount');
+      const desc = descEl.value.trim();
+      const amount = Number(amountEl.value);
+      const payerId = document.getElementById('exp-payer').value;
+      const splitAmong = [...document.querySelectorAll('#split-checks input:checked')].map(c => c.value);
 
-      if (!desc) { alert('Enter a description.'); return; }
-      if (!amount || amount <= 0) { alert('Enter a valid amount.'); return; }
-      if (splitAmong.length === 0) { alert('Select at least one person to split with.'); return; }
+      if (!desc) { showToast('Enter a description.', 'error'); return; }
+      if (!Number.isFinite(amount) || amount <= 0) { showToast('Enter a valid amount.', 'error'); return; }
+      if (splitAmong.length === 0) { showToast('Select at least one person to split with.', 'error'); return; }
 
-      expenses.push({
-        id: Date.now(),
-        desc,
-        amount,
-        payer,
-        splitAmong,
-        date: new Date().toISOString()
-      });
+      const result = await withButton('add-expense-btn', () =>
+        api('POST', '/api/expenses', { desc, amount, payerId, splitAmong }));
+      if (!result) return;
+      applyState(result);
 
-      await saveData();
+      descEl.value = '';
+      amountEl.value = '';
+      document.querySelectorAll('#split-checks input').forEach(c => { c.checked = true; });
+      descEl.focus();
 
-      // Reset form
-      document.getElementById('exp-desc').value = '';
-      document.getElementById('exp-amount').value = '';
-      document.querySelectorAll('#split-checks input').forEach(c => c.checked = true);
-
-      // Flash confirmation
-      const btn = document.querySelector('.expense-form .btn-primary');
-      btn.textContent = 'Added!';
-      btn.style.background = 'var(--green)';
-      setTimeout(() => {
-        btn.textContent = 'Add Expense';
-        btn.style.background = '';
-      }, 1200);
+      renderHistory();
+      renderBalances();
+      showToast(`Added ${desc} — ${money(amount)}`, 'success');
     }
 
     async function deleteExpense(id) {
       if (!confirm('Delete this expense?')) return;
-      expenses = expenses.filter(e => e.id !== id);
-      await saveData();
+      try {
+        applyState(await api('DELETE', '/api/expenses/' + encodeURIComponent(id)));
+      } catch (err) {
+        showToast(err.message, 'error');
+        // The expense may have been deleted by someone else — resync either way.
+        try { applyState(await api('GET', '/api/data')); } catch (_) {}
+      }
       renderHistory();
+      renderBalances();
     }
+
+    async function clearAll() {
+      if (!confirm('Clear ALL expenses? This cannot be undone.')) return;
+      try {
+        applyState(await api('DELETE', '/api/expenses'));
+      } catch (err) {
+        showToast(err.message, 'error');
+        return;
+      }
+      renderHistory();
+      renderBalances();
+      switchTab('history');
+    }
+
+    // --- Rendering ---
 
     function renderHistory() {
       const list = document.getElementById('expense-list');
-      const total = expenses.reduce((sum, e) => sum + e.amount, 0);
-      document.getElementById('total-spending').textContent = '¥' + total.toFixed(0);
+      const total = state.expenses.reduce((sum, e) => sum + e.amount, 0);
+      document.getElementById('total-spending').textContent = money(total);
 
-      if (expenses.length === 0) {
+      if (state.expenses.length === 0) {
         list.innerHTML = `<div class="empty-state"><div class="icon">&#128203;</div><p>No expenses yet.<br/>Add one to get started!</p></div>`;
         return;
       }
 
-      list.innerHTML = [...expenses].reverse().map(e => {
-        const date = new Date(e.date);
-        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        const splitNames = e.splitAmong.map(i => people[i]).join(', ');
+      list.innerHTML = [...state.expenses].reverse().map(e => {
+        const dateStr = new Date(e.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const splitNames = e.splitAmong.map(personName).join(', ');
+        const share = money(e.amount / e.splitAmong.length);
         return `
           <div class="expense-item">
             <div class="expense-info">
               <h3>${escapeHtml(e.desc)}</h3>
-              <p>${people[e.payer]} paid &middot; Split: ${splitNames} &middot; ${dateStr}</p>
+              <p>${escapeHtml(personName(e.payerId))} paid &middot; Split ${e.splitAmong.length} ways (${escapeHtml(share)} each) &middot; ${escapeHtml(splitNames)} &middot; ${dateStr}</p>
             </div>
             <div class="expense-right">
-              <span class="expense-amount">¥${e.amount.toFixed(0)}</span>
-              <button class="delete-btn" onclick="deleteExpense(${e.id})" title="Delete">&times;</button>
+              <span class="expense-amount">${money(e.amount)}</span>
+              <button class="delete-btn" onclick="deleteExpense('${escapeHtml(e.id)}')" title="Delete">&times;</button>
             </div>
           </div>`;
       }).join('');
     }
 
     function renderBalances() {
-      // Start with pre-existing balances
-      const balances = startingBalances.map(b => b);
-      const spent = people.map(() => 0);
+      const balances = new Map(state.people.map(p => [p.id, p.startingBalance || 0]));
+      const spent = new Map(state.people.map(p => [p.id, 0]));
 
-      expenses.forEach(e => {
-        const share = e.amount / e.splitAmong.length;
-        spent[e.payer] += e.amount;
-        e.splitAmong.forEach(i => {
-          balances[i] -= share;  // each person in the split owes their share
-        });
-        balances[e.payer] += e.amount; // payer gets credited for the full amount
+      state.expenses.forEach(e => {
+        if (!balances.has(e.payerId)) return;
+        const participants = e.splitAmong.filter(id => balances.has(id));
+        if (participants.length === 0) return;
+        const share = e.amount / participants.length;
+        spent.set(e.payerId, spent.get(e.payerId) + e.amount);
+        balances.set(e.payerId, balances.get(e.payerId) + e.amount); // payer fronted the full amount
+        participants.forEach(id => balances.set(id, balances.get(id) - share)); // each owes their share
       });
 
-      // Render balance cards
-      const cardsDiv = document.getElementById('balance-cards');
-      cardsDiv.innerHTML = people.map((p, i) => {
-        const bal = balances[i];
-        const cls = bal > 0.01 ? 'positive' : bal < -0.01 ? 'negative' : 'zero';
-        const prefix = bal > 0.01 ? '+' : '';
+      document.getElementById('balance-cards').innerHTML = state.people.map(p => {
+        const bal = balances.get(p.id);
+        const cls = bal > EPSILON ? 'positive' : bal < -EPSILON ? 'negative' : 'zero';
+        const prefix = bal > EPSILON ? '+' : '';
         return `
           <div class="balance-card">
-            <div class="name">${escapeHtml(p)}</div>
-            <div class="amount ${cls}">${prefix}¥${bal.toFixed(0)}</div>
-            <div class="total-spent">Spent: ¥${spent[i].toFixed(0)}</div>
+            <div class="name">${escapeHtml(p.name)}</div>
+            <div class="amount ${cls}">${prefix}${money(bal)}</div>
+            <div class="total-spent">Spent: ${money(spent.get(p.id))}</div>
           </div>`;
       }).join('');
 
-      // Calculate minimal settlements
-      const debts = balances.map((b, i) => ({ index: i, amount: b }));
-      const settlements = [];
-      const debtors = debts.filter(d => d.amount < -0.01).sort((a, b) => a.amount - b.amount);
-      const creditors = debts.filter(d => d.amount > 0.01).sort((a, b) => b.amount - a.amount);
+      renderSettlements(balances);
+    }
 
+    // Greedy largest-debtor to largest-creditor, which yields at most n-1
+    // transfers for n people.
+    function renderSettlements(balances) {
+      const debtors = [];
+      const creditors = [];
+      balances.forEach((amount, id) => {
+        if (amount < -EPSILON) debtors.push({ id, amount: -amount });
+        else if (amount > EPSILON) creditors.push({ id, amount });
+      });
+      debtors.sort((a, b) => b.amount - a.amount);
+      creditors.sort((a, b) => b.amount - a.amount);
+
+      const settlements = [];
       let di = 0, ci = 0;
       while (di < debtors.length && ci < creditors.length) {
-        const amount = Math.min(-debtors[di].amount, creditors[ci].amount);
-        if (amount > 0.01) {
-          settlements.push({
-            from: debtors[di].index,
-            to: creditors[ci].index,
-            amount
-          });
+        const amount = Math.min(debtors[di].amount, creditors[ci].amount);
+        if (amount > EPSILON) {
+          settlements.push({ from: debtors[di].id, to: creditors[ci].id, amount });
         }
-        debtors[di].amount += amount;
+        debtors[di].amount -= amount;
         creditors[ci].amount -= amount;
-        if (Math.abs(debtors[di].amount) < 0.01) di++;
-        if (Math.abs(creditors[ci].amount) < 0.01) ci++;
+        if (debtors[di].amount <= EPSILON) di++;
+        if (creditors[ci].amount <= EPSILON) ci++;
       }
 
       const settleDiv = document.getElementById('settlement-list');
       if (settlements.length === 0) {
         settleDiv.innerHTML = `<div class="empty-state"><div class="icon">&#9989;</div><p>All settled up!</p></div>`;
-      } else {
-        settleDiv.innerHTML = settlements.map(s => `
-          <div class="settlement-item">
-            <div class="settlement-arrow">
-              <span class="from">${escapeHtml(people[s.from])}</span>
-              <span class="arrow">&#10132;</span>
-              <span class="to">${escapeHtml(people[s.to])}</span>
-            </div>
-            <span class="settlement-amount">¥${s.amount.toFixed(0)}</span>
-          </div>
-        `).join('');
+        return;
       }
-    }
-
-    function editNames() {
-      document.getElementById('name1').value = people[0];
-      document.getElementById('name2').value = people[1];
-      document.getElementById('name3').value = people[2];
-      document.getElementById('name4').value = people[3];
-      showScreen('setup-screen');
-    }
-
-    async function clearAll() {
-      if (!confirm('Clear ALL expenses? This cannot be undone.')) return;
-      expenses = [];
-      await saveData();
-      switchTab('history');
-    }
-
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
+      settleDiv.innerHTML = settlements.map(s => `
+        <div class="settlement-item">
+          <div class="settlement-arrow">
+            <span class="from">${escapeHtml(personName(s.from))}</span>
+            <span class="arrow">&#10132;</span>
+            <span class="to">${escapeHtml(personName(s.to))}</span>
+          </div>
+          <span class="settlement-amount">${money(s.amount)}</span>
+        </div>
+      `).join('');
     }
 
     init();
