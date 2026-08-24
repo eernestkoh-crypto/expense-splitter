@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
   <title>Squad Splitter</title>
   <style>
     :root {
@@ -233,6 +234,7 @@
 
     .form-group {
       flex: 1;
+      min-width: 0;
     }
 
     .form-group label {
@@ -254,6 +256,7 @@
       font-size: 0.95rem;
       outline: none;
       transition: border 0.2s;
+      font-family: inherit;
     }
 
     .form-group input:focus, .form-group select:focus {
@@ -266,7 +269,7 @@
 
     .split-label {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       justify-content: space-between;
       gap: 10px;
       font-size: 0.8rem;
@@ -291,14 +294,42 @@
 
     .split-toggle-all:hover { color: var(--accent); }
 
+    /* Equal / exact mode switch */
+    .mode-toggle {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .mode-toggle button {
+      padding: 6px 12px;
+      border: none;
+      background: #111;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mode-toggle button.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    /* Split rows — chips when even, a list when exact */
     .split-checks {
       display: flex;
       gap: 8px;
       flex-wrap: wrap;
-      margin-bottom: 16px;
+      margin-bottom: 10px;
     }
 
-    .split-checks label {
+    .split-row {
       display: flex;
       align-items: center;
       gap: 8px;
@@ -311,16 +342,59 @@
       font-size: 0.9rem;
     }
 
-    .split-checks label:has(input:checked) {
+    .split-row:has(input[type="checkbox"]:checked) {
       border-color: var(--accent);
       background: rgba(233, 69, 96, 0.1);
     }
 
-    .split-checks input[type="checkbox"] {
+    .split-row input[type="checkbox"] {
       accent-color: var(--accent);
       width: 16px;
       height: 16px;
+      flex-shrink: 0;
     }
+
+    .split-amount { display: none; }
+
+    .split-checks.exact {
+      flex-direction: column;
+      flex-wrap: nowrap;
+    }
+
+    .split-checks.exact .split-row { width: 100%; }
+    .split-checks.exact .split-name { flex: 1; }
+
+    .split-checks.exact .split-amount {
+      display: block;
+      width: 110px;
+      flex-shrink: 0;
+      padding: 8px 10px;
+      background: #0b0b0b;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.9rem;
+      text-align: right;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .split-checks.exact .split-amount:focus { border-color: var(--accent); }
+
+    .split-row input[type="checkbox"]:not(:checked) ~ .split-amount {
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .split-summary {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 14px;
+      min-height: 1.2em;
+    }
+
+    .split-summary.over { color: var(--red); }
+    .split-summary.ok { color: var(--green); }
 
     /* Expense List */
     .expense-list {
@@ -356,12 +430,26 @@
     .expense-info p {
       font-size: 0.8rem;
       color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 2px 7px;
+      border-radius: 5px;
+      background: rgba(233, 69, 96, 0.16);
+      color: var(--accent);
+      vertical-align: middle;
     }
 
     .expense-right {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 10px;
       flex-shrink: 0;
     }
 
@@ -371,21 +459,20 @@
       color: var(--green);
     }
 
-    .delete-btn {
+    .icon-btn {
       background: none;
       border: none;
       color: var(--muted);
       cursor: pointer;
-      font-size: 1.2rem;
-      padding: 4px;
+      font-size: 1.05rem;
+      padding: 5px 7px;
       border-radius: 6px;
+      line-height: 1;
       transition: color 0.2s, background 0.2s;
     }
 
-    .delete-btn:hover {
-      color: var(--red);
-      background: rgba(233, 69, 96, 0.1);
-    }
+    .icon-btn:hover { color: var(--text); background: rgba(255, 255, 255, 0.07); }
+    .icon-btn.danger:hover { color: var(--red); background: rgba(233, 69, 96, 0.12); }
 
     /* Balances */
     .balance-cards {
@@ -427,18 +514,24 @@
     .amount.negative { color: var(--red); }
     .amount.zero { color: var(--muted); }
 
-    /* Settlements */
-    .settlements {
+    /* Settlements + payments */
+    .panel {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 24px;
+      margin-bottom: 20px;
     }
 
-    .settlements h2 {
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
       margin-bottom: 16px;
-      font-size: 1.1rem;
     }
+
+    .panel-head h2 { font-size: 1.1rem; }
 
     .settlement-item {
       display: flex;
@@ -449,9 +542,7 @@
       border-bottom: 1px solid var(--border);
     }
 
-    .settlement-item:last-child {
-      border-bottom: none;
-    }
+    .settlement-item:last-child { border-bottom: none; }
 
     .settlement-arrow {
       display: flex;
@@ -466,11 +557,46 @@
     .settlement-arrow .to { color: var(--green); font-weight: 600; }
     .settlement-arrow .arrow { color: var(--muted); }
 
+    .settlement-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
     .settlement-amount {
       font-weight: 700;
       font-size: 1.05rem;
-      flex-shrink: 0;
     }
+
+    .settle-btn {
+      background: rgba(0, 200, 151, 0.14);
+      border: none;
+      color: var(--green);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 7px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .settle-btn:hover { background: rgba(0, 200, 151, 0.25); }
+
+    .payment-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+
+    .payment-item:last-child { border-bottom: none; }
+    .payment-item .meta { color: var(--muted); font-size: 0.78rem; margin-top: 3px; }
 
     .empty-state {
       text-align: center;
@@ -520,9 +646,7 @@
       color: var(--text);
     }
 
-    .btn-outline:hover {
-      border-color: var(--accent);
-    }
+    .btn-outline:hover { border-color: var(--accent); }
 
     /* Starting Balances */
     .balance-setup-card {
@@ -533,10 +657,7 @@
       border: 1px solid var(--border);
     }
 
-    .balance-setup-card h2 {
-      margin-bottom: 6px;
-      font-size: 1.1rem;
-    }
+    .balance-setup-card h2 { margin-bottom: 6px; font-size: 1.1rem; }
 
     .balance-setup-card .subtitle {
       color: var(--muted);
@@ -602,9 +723,7 @@
       min-width: 0;
     }
 
-    .balance-input-row input[type="number"]:focus {
-      border-color: var(--accent);
-    }
+    .balance-input-row input[type="number"]:focus { border-color: var(--accent); }
 
     .skip-link {
       display: block;
@@ -638,7 +757,7 @@
       box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
       transition: transform 0.25s ease, opacity 0.25s ease;
       opacity: 0;
-      z-index: 100;
+      z-index: 300;
       display: flex;
       align-items: center;
       gap: 16px;
@@ -663,7 +782,7 @@
     .toast.error { border-color: var(--red); }
     .toast.success { border-color: var(--green); }
 
-    /* PIN modal */
+    /* Modals */
     .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -682,22 +801,24 @@
       padding: 26px;
       width: 100%;
       max-width: 380px;
+      max-height: 90vh;
+      overflow-y: auto;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
     }
 
-    .modal h2 {
-      font-size: 1.1rem;
-      margin-bottom: 8px;
-    }
+    .modal.wide { max-width: 520px; }
 
-    .modal p {
+    .modal h2 { font-size: 1.1rem; margin-bottom: 8px; }
+
+    .modal > p {
       color: var(--muted);
       font-size: 0.85rem;
       line-height: 1.5;
       margin-bottom: 18px;
     }
 
-    .modal input {
+    /* The PIN field is the only centred, spaced-out input. */
+    #pin-input {
       width: 100%;
       padding: 14px 16px;
       background: #111;
@@ -711,7 +832,7 @@
       transition: border 0.2s;
     }
 
-    .modal input:focus { border-color: var(--accent); }
+    #pin-input:focus { border-color: var(--accent); }
 
     .modal-actions {
       display: flex;
@@ -729,6 +850,7 @@
       header h1 { font-size: 1.6rem; }
       .balance-input-row { flex-wrap: wrap; }
       .balance-input-row .person-name { width: 100%; }
+      .split-label { flex-wrap: wrap; }
     }
   </style>
 </head>
@@ -764,7 +886,6 @@
 
     <!-- Main App -->
     <div id="app-screen" class="hidden">
-      <!-- Tabs -->
       <div class="tabs">
         <button class="tab active" data-tab="add" onclick="switchTab('add')">Add Expense</button>
         <button class="tab" data-tab="history" onclick="switchTab('history')">History</button>
@@ -780,20 +901,34 @@
               <label for="exp-desc">Description</label>
               <input type="text" id="exp-desc" placeholder="e.g. Dinner, Grab, Groceries" maxlength="100" />
             </div>
-            <div class="form-group" style="max-width: 160px;">
+            <div class="form-group" style="max-width: 150px;">
               <label for="exp-amount">Amount (&#3647;)</label>
-              <input type="number" id="exp-amount" placeholder="0.00" min="0" step="0.01" />
+              <input type="number" id="exp-amount" placeholder="0.00" min="0" step="0.01"
+                     oninput="updateSplitSummary(ADD_CTX)" />
             </div>
           </div>
-          <div class="form-group" style="margin-bottom: 14px;">
-            <label for="exp-payer">Who paid?</label>
-            <select id="exp-payer"></select>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="exp-payer">Who paid?</label>
+              <select id="exp-payer"></select>
+            </div>
+            <div class="form-group" style="max-width: 180px;">
+              <label for="exp-date">Date</label>
+              <input type="date" id="exp-date" />
+            </div>
           </div>
           <div class="split-label">
             <span>Split between</span>
-            <button type="button" class="split-toggle-all" onclick="toggleAllSplit()">Toggle all</button>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <button type="button" class="split-toggle-all" onclick="toggleAllSplit(ADD_CTX)">Toggle all</button>
+              <div class="mode-toggle">
+                <button type="button" id="add-mode-equal" class="active" onclick="setSplitMode(ADD_CTX, false)">Equally</button>
+                <button type="button" id="add-mode-exact" onclick="setSplitMode(ADD_CTX, true)">Exact</button>
+              </div>
+            </div>
           </div>
           <div class="split-checks" id="split-checks"></div>
+          <div class="split-summary" id="split-summary"></div>
           <button class="btn btn-primary" id="add-expense-btn" onclick="addExpense()">Add Expense</button>
         </div>
       </div>
@@ -810,9 +945,16 @@
       <!-- Balances Tab -->
       <div id="tab-balances" class="hidden">
         <div class="balance-cards" id="balance-cards"></div>
-        <div class="settlements" id="settlements">
-          <h2>Who pays whom</h2>
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Who pays whom</h2>
+            <button class="settle-btn" onclick="openPaymentModal()">+ Record payment</button>
+          </div>
           <div id="settlement-list"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h2>Payments</h2></div>
+          <div id="payment-list"></div>
         </div>
       </div>
 
@@ -824,15 +966,94 @@
     </div>
   </div>
 
+  <!-- Edit expense -->
+  <div class="modal-backdrop hidden" id="edit-modal" onclick="onBackdropClick(event, 'edit-modal')">
+    <div class="modal wide" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
+      <h2 id="edit-modal-title">Edit expense</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="edit-desc">Description</label>
+          <input type="text" id="edit-desc" maxlength="100" />
+        </div>
+        <div class="form-group" style="max-width: 140px;">
+          <label for="edit-amount">Amount (&#3647;)</label>
+          <input type="number" id="edit-amount" min="0" step="0.01" oninput="updateSplitSummary(EDIT_CTX)" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="edit-payer">Who paid?</label>
+          <select id="edit-payer"></select>
+        </div>
+        <div class="form-group" style="max-width: 170px;">
+          <label for="edit-date">Date</label>
+          <input type="date" id="edit-date" />
+        </div>
+      </div>
+      <div class="split-label">
+        <span>Split between</span>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <button type="button" class="split-toggle-all" onclick="toggleAllSplit(EDIT_CTX)">Toggle all</button>
+          <div class="mode-toggle">
+            <button type="button" id="edit-mode-equal" class="active" onclick="setSplitMode(EDIT_CTX, false)">Equally</button>
+            <button type="button" id="edit-mode-exact" onclick="setSplitMode(EDIT_CTX, true)">Exact</button>
+          </div>
+        </div>
+      </div>
+      <div class="split-checks" id="edit-split-checks"></div>
+      <div class="split-summary" id="edit-split-summary"></div>
+      <div class="modal-actions">
+        <button class="btn btn-small btn-outline" onclick="closeModal('edit-modal')">Cancel</button>
+        <button class="btn btn-small btn-primary" id="edit-save-btn" style="margin-top:0" onclick="saveEditedExpense()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Record payment -->
+  <div class="modal-backdrop hidden" id="payment-modal" onclick="onBackdropClick(event, 'payment-modal')">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="payment-modal-title">
+      <h2 id="payment-modal-title">Record a payment</h2>
+      <p>Money handed over to settle up. This reduces what's owed without counting as group spending.</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="pay-from">From</label>
+          <select id="pay-from"></select>
+        </div>
+        <div class="form-group">
+          <label for="pay-to">To</label>
+          <select id="pay-to"></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="max-width: 150px;">
+          <label for="pay-amount">Amount (&#3647;)</label>
+          <input type="number" id="pay-amount" min="0" step="0.01" placeholder="0.00" />
+        </div>
+        <div class="form-group">
+          <label for="pay-date">Date</label>
+          <input type="date" id="pay-date" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="pay-note">Note (optional)</label>
+        <input type="text" id="pay-note" maxlength="100" placeholder="e.g. cash at breakfast" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-small btn-outline" onclick="closeModal('payment-modal')">Cancel</button>
+        <button class="btn btn-small btn-primary" id="pay-save-btn" style="margin-top:0" onclick="savePayment()">Record</button>
+      </div>
+    </div>
+  </div>
+
   <!-- PIN gate for Clear All -->
-  <div class="modal-backdrop hidden" id="pin-modal" onclick="onBackdropClick(event)">
+  <div class="modal-backdrop hidden" id="pin-modal" onclick="onBackdropClick(event, 'pin-modal')">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pin-modal-title">
       <h2 id="pin-modal-title">Clear all expenses?</h2>
-      <p>This deletes every expense for the whole squad and can't be undone. Your squad and starting balances stay. Enter the PIN to confirm.</p>
+      <p>This deletes every expense for the whole squad and can't be undone. Your squad, payments and starting balances stay. Enter the PIN to confirm.</p>
       <input type="password" id="pin-input" inputmode="numeric" pattern="[0-9]*" maxlength="6"
              placeholder="PIN" autocomplete="off" onkeydown="onPinKey(event)" />
       <div class="modal-actions">
-        <button class="btn btn-small btn-outline" onclick="closePinModal()">Cancel</button>
+        <button class="btn btn-small btn-outline" onclick="closeModal('pin-modal')">Cancel</button>
         <button class="btn btn-small btn-danger" id="pin-confirm-btn" onclick="confirmPin()">Clear All</button>
       </div>
     </div>
@@ -846,13 +1067,24 @@
     const MAX_PEOPLE = 20;
     const EPSILON = 0.005; // half a satang — below this, treat as settled
 
-    // Server-owned state. People carry stable ids, and expenses reference those
-    // ids rather than array positions, so adding or removing someone never
-    // re-points an existing expense at the wrong person.
-    let state = { people: [], expenses: [] };
+    // The add form and the edit dialog have identical split controls, so both
+    // are driven by one set of functions parameterised by these element ids.
+    const ADD_CTX = {
+      rows: 'split-checks', amount: 'exp-amount', summary: 'split-summary',
+      equalBtn: 'add-mode-equal', exactBtn: 'add-mode-exact'
+    };
+    const EDIT_CTX = {
+      rows: 'edit-split-checks', amount: 'edit-amount', summary: 'edit-split-summary',
+      equalBtn: 'edit-mode-equal', exactBtn: 'edit-mode-exact'
+    };
 
-    // Working copy for the setup screen only, committed via savePeople().
-    let draftPeople = [];
+    // Server-owned state. People carry stable ids; expenses and payments
+    // reference those ids rather than array positions, so adding or removing
+    // someone never re-points an existing record at the wrong person.
+    let state = { people: [], expenses: [], payments: [] };
+
+    let draftPeople = [];   // working copy for the setup screen only
+    let editingId = null;   // expense currently open in the edit dialog
 
     function money(n) {
       const rounded = Math.abs(n) < EPSILON ? 0 : n;
@@ -868,6 +1100,34 @@
     function personName(id) {
       const p = state.people.find(x => x.id === id);
       return p ? p.name : 'Unknown';
+    }
+
+    function shortDate(iso) {
+      return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    // Date inputs speak local calendar days; the store speaks ISO instants.
+    // Keep the current time of day so same-day entries stay in the order they
+    // were added rather than all collapsing to midnight.
+    function dateInputToISO(value) {
+      if (!value) return new Date().toISOString();
+      const [y, m, d] = value.split('-').map(Number);
+      const now = new Date();
+      return new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds()).toISOString();
+    }
+
+    function isoToDateInput(iso) {
+      const d = iso ? new Date(iso) : new Date();
+      const pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    }
+
+    // What one person owes for one expense: their exact share if the expense
+    // was split unevenly, otherwise an equal cut.
+    function shareOf(expense, personId) {
+      if (!expense.splitAmong.includes(personId)) return 0;
+      if (expense.shares && expense.shares[personId] != null) return expense.shares[personId];
+      return expense.amount / expense.splitAmong.length;
     }
 
     // --- API ---
@@ -890,7 +1150,11 @@
     // always ends up in sync with what the server actually stored.
     function applyState(data) {
       if (!data || !Array.isArray(data.people) || !Array.isArray(data.expenses)) return;
-      state = { people: data.people, expenses: data.expenses };
+      state = {
+        people: data.people,
+        expenses: data.expenses,
+        payments: Array.isArray(data.payments) ? data.payments : []
+      };
     }
 
     let toastTimer = null;
@@ -923,7 +1187,7 @@
     }
 
     // Disables the button while the request is in flight so a double-click
-    // can't submit the same expense twice.
+    // can't submit the same thing twice.
     async function withButton(id, fn) {
       const btn = document.getElementById(id);
       if (btn) btn.disabled = true;
@@ -943,12 +1207,27 @@
       });
     }
 
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+      if (id === 'edit-modal') editingId = null;
+    }
+
+    function onBackdropClick(event, id) {
+      if (event.target.id === id) closeModal(id);
+    }
+
+    function anyModalOpen() {
+      return ['edit-modal', 'payment-modal', 'pin-modal']
+        .some(id => !document.getElementById(id).classList.contains('hidden'));
+    }
+
     async function init() {
       try {
         applyState(await api('GET', '/api/data'));
       } catch (err) {
         showToast('Could not load data: ' + err.message, 'error');
       }
+      document.getElementById('exp-date').value = isoToDateInput();
       if (state.people.length >= MIN_PEOPLE) {
         showScreen('app-screen');
         renderApp();
@@ -1103,42 +1382,145 @@
       renderApp();
     }
 
+    // --- Split controls (shared by the add form and the edit dialog) ---
+
+    function buildSplitRows(ctx, selected, shares) {
+      document.getElementById(ctx.rows).innerHTML = state.people.map(p => `
+        <label class="split-row">
+          <input type="checkbox" value="${escapeHtml(p.id)}" ${selected.has(p.id) ? 'checked' : ''}
+                 onchange="updateSplitSummary(${ctxName(ctx)})" />
+          <span class="split-name">${escapeHtml(p.name)}</span>
+          <input type="number" class="split-amount" min="0" step="0.01" placeholder="0.00"
+                 value="${shares && shares[p.id] != null ? shares[p.id] : ''}"
+                 oninput="updateSplitSummary(${ctxName(ctx)})" onclick="event.stopPropagation()" />
+        </label>`).join('');
+      updateSplitSummary(ctx);
+    }
+
+    // Inline handlers need a global name for the context object.
+    function ctxName(ctx) {
+      return ctx === ADD_CTX ? 'ADD_CTX' : 'EDIT_CTX';
+    }
+
+    function isExact(ctx) {
+      return document.getElementById(ctx.rows).classList.contains('exact');
+    }
+
+    function setSplitMode(ctx, exact) {
+      document.getElementById(ctx.rows).classList.toggle('exact', exact);
+      document.getElementById(ctx.equalBtn).classList.toggle('active', !exact);
+      document.getElementById(ctx.exactBtn).classList.toggle('active', exact);
+
+      // Moving into exact mode, seed each field with the even split so the
+      // amounts start correct and only need nudging.
+      if (exact) {
+        const total = Number(document.getElementById(ctx.amount).value);
+        const checked = [...document.querySelectorAll(`#${ctx.rows} .split-row input[type="checkbox"]:checked`)];
+        if (Number.isFinite(total) && total > 0 && checked.length) {
+          const even = Math.round((total / checked.length) * 100) / 100;
+          checked.forEach((cb, i) => {
+            const field = cb.closest('.split-row').querySelector('.split-amount');
+            if (field.value !== '') return; // don't stomp something already typed
+            // Give the rounding remainder to the first person so it still sums.
+            field.value = i === 0
+              ? (Math.round((total - even * (checked.length - 1)) * 100) / 100).toFixed(2)
+              : even.toFixed(2);
+          });
+        }
+      }
+      updateSplitSummary(ctx);
+    }
+
+    function toggleAllSplit(ctx) {
+      const boxes = [...document.querySelectorAll(`#${ctx.rows} input[type="checkbox"]`)];
+      const target = !boxes.every(b => b.checked);
+      boxes.forEach(b => { b.checked = target; });
+      updateSplitSummary(ctx);
+    }
+
+    function collectSplit(ctx) {
+      const exact = isExact(ctx);
+      const splitAmong = [];
+      const shares = {};
+      document.querySelectorAll(`#${ctx.rows} .split-row`).forEach(row => {
+        const cb = row.querySelector('input[type="checkbox"]');
+        if (!cb.checked) return;
+        splitAmong.push(cb.value);
+        if (exact) {
+          const raw = row.querySelector('.split-amount').value;
+          shares[cb.value] = raw === '' ? 0 : Number(raw);
+        }
+      });
+      return { splitAmong, shares: exact ? shares : null };
+    }
+
+    // Live feedback so nobody submits a split that doesn't add up.
+    function updateSplitSummary(ctx) {
+      const el = document.getElementById(ctx.summary);
+      const total = Number(document.getElementById(ctx.amount).value);
+      const { splitAmong, shares } = collectSplit(ctx);
+
+      if (splitAmong.length === 0) {
+        el.className = 'split-summary over';
+        el.textContent = 'Nobody selected.';
+        return;
+      }
+
+      if (!shares) {
+        if (!Number.isFinite(total) || total <= 0) { el.className = 'split-summary'; el.textContent = ''; return; }
+        el.className = 'split-summary';
+        el.textContent = `${money(total / splitAmong.length)} each, ${splitAmong.length} ways.`;
+        return;
+      }
+
+      const sum = Math.round(splitAmong.reduce((s, id) => s + (shares[id] || 0), 0) * 100) / 100;
+      if (!Number.isFinite(total) || total <= 0) {
+        el.className = 'split-summary';
+        el.textContent = `${money(sum)} assigned. Enter the total above.`;
+        return;
+      }
+      const diff = Math.round((total - sum) * 100) / 100;
+      if (Math.abs(diff) < 0.01) {
+        el.className = 'split-summary ok';
+        el.textContent = `${money(sum)} assigned — adds up.`;
+      } else if (diff > 0) {
+        el.className = 'split-summary over';
+        el.textContent = `${money(sum)} of ${money(total)} assigned — ${money(diff)} left.`;
+      } else {
+        el.className = 'split-summary over';
+        el.textContent = `${money(sum)} assigned — ${money(-diff)} over the total.`;
+      }
+    }
+
     // --- Expenses ---
 
     // preserve=true is used by the background refresh: someone else changing
     // the squad must not silently reset a payer or split you already chose.
     function populateForm(preserve) {
       const payerSelect = document.getElementById('exp-payer');
-      const splitChecks = document.getElementById('split-checks');
+      const rows = document.getElementById(ADD_CTX.rows);
 
       const prevPayer = preserve ? payerSelect.value : null;
       const prevIds = preserve
-        ? new Set([...splitChecks.querySelectorAll('input')].map(c => c.value))
+        ? new Set([...rows.querySelectorAll('input[type="checkbox"]')].map(c => c.value))
         : null;
       const prevChecked = preserve
-        ? new Set([...splitChecks.querySelectorAll('input:checked')].map(c => c.value))
+        ? new Set([...rows.querySelectorAll('input[type="checkbox"]:checked')].map(c => c.value))
         : null;
 
       payerSelect.innerHTML = state.people
         .map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
 
-      splitChecks.innerHTML = state.people
-        .map(p => `<label><input type="checkbox" value="${escapeHtml(p.id)}" checked /> ${escapeHtml(p.name)}</label>`)
-        .join('');
+      // Everyone is in the split by default; a person who was already there
+      // keeps whatever you had chosen, and anyone new starts checked.
+      const selected = new Set(state.people
+        .filter(p => !preserve || !prevIds.has(p.id) || prevChecked.has(p.id))
+        .map(p => p.id));
+      buildSplitRows(ADD_CTX, selected, null);
 
-      if (!preserve) return;
-
-      if (prevPayer && state.people.some(p => p.id === prevPayer)) payerSelect.value = prevPayer;
-      splitChecks.querySelectorAll('input').forEach(c => {
-        // Someone who has only just joined stays checked, as on a fresh form.
-        if (prevIds.has(c.value)) c.checked = prevChecked.has(c.value);
-      });
-    }
-
-    function toggleAllSplit() {
-      const boxes = [...document.querySelectorAll('#split-checks input')];
-      const target = !boxes.every(b => b.checked);
-      boxes.forEach(b => { b.checked = target; });
+      if (preserve && prevPayer && state.people.some(p => p.id === prevPayer)) {
+        payerSelect.value = prevPayer;
+      }
     }
 
     function switchTab(tab) {
@@ -1156,25 +1538,82 @@
       const desc = descEl.value.trim();
       const amount = Number(amountEl.value);
       const payerId = document.getElementById('exp-payer').value;
-      const splitAmong = [...document.querySelectorAll('#split-checks input:checked')].map(c => c.value);
+      const { splitAmong, shares } = collectSplit(ADD_CTX);
 
       if (!desc) { showToast('Enter a description.', 'error'); return; }
       if (!Number.isFinite(amount) || amount <= 0) { showToast('Enter a valid amount.', 'error'); return; }
       if (splitAmong.length === 0) { showToast('Select at least one person to split with.', 'error'); return; }
 
-      const result = await withButton('add-expense-btn', () =>
-        api('POST', '/api/expenses', { desc, amount, payerId, splitAmong }));
+      const body = {
+        desc, amount, payerId, splitAmong,
+        date: dateInputToISO(document.getElementById('exp-date').value)
+      };
+      if (shares) body.shares = shares;
+
+      const result = await withButton('add-expense-btn', () => api('POST', '/api/expenses', body));
       if (!result) return;
       applyState(result);
 
       descEl.value = '';
       amountEl.value = '';
-      document.querySelectorAll('#split-checks input').forEach(c => { c.checked = true; });
+      setSplitMode(ADD_CTX, false);
+      document.querySelectorAll(`#${ADD_CTX.rows} input[type="checkbox"]`).forEach(c => { c.checked = true; });
+      document.querySelectorAll(`#${ADD_CTX.rows} .split-amount`).forEach(f => { f.value = ''; });
+      document.getElementById('exp-date').value = isoToDateInput();
+      updateSplitSummary(ADD_CTX);
       descEl.focus();
 
       renderHistory();
       renderBalances();
       showToast(`Added ${desc} — ${money(amount)}`, 'success');
+    }
+
+    function openEditModal(id) {
+      const e = state.expenses.find(x => x.id === id);
+      if (!e) { showToast('That expense is gone.', 'error'); return; }
+      editingId = id;
+
+      document.getElementById('edit-desc').value = e.desc;
+      document.getElementById('edit-amount').value = e.amount;
+      document.getElementById('edit-date').value = isoToDateInput(e.date);
+      document.getElementById('edit-payer').innerHTML = state.people
+        .map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
+      document.getElementById('edit-payer').value = e.payerId;
+
+      const exact = !!e.shares;
+      document.getElementById(EDIT_CTX.rows).classList.toggle('exact', exact);
+      document.getElementById(EDIT_CTX.equalBtn).classList.toggle('active', !exact);
+      document.getElementById(EDIT_CTX.exactBtn).classList.toggle('active', exact);
+      buildSplitRows(EDIT_CTX, new Set(e.splitAmong), e.shares || null);
+
+      document.getElementById('edit-modal').classList.remove('hidden');
+    }
+
+    async function saveEditedExpense() {
+      if (!editingId) return;
+      const desc = document.getElementById('edit-desc').value.trim();
+      const amount = Number(document.getElementById('edit-amount').value);
+      const payerId = document.getElementById('edit-payer').value;
+      const { splitAmong, shares } = collectSplit(EDIT_CTX);
+
+      if (!desc) { showToast('Enter a description.', 'error'); return; }
+      if (!Number.isFinite(amount) || amount <= 0) { showToast('Enter a valid amount.', 'error'); return; }
+      if (splitAmong.length === 0) { showToast('Select at least one person to split with.', 'error'); return; }
+
+      const body = {
+        desc, amount, payerId, splitAmong,
+        date: dateInputToISO(document.getElementById('edit-date').value)
+      };
+      if (shares) body.shares = shares;
+
+      const result = await withButton('edit-save-btn', () =>
+        api('PUT', '/api/expenses/' + encodeURIComponent(editingId), body));
+      if (!result) return;
+      applyState(result);
+      closeModal('edit-modal');
+      renderHistory();
+      renderBalances();
+      showToast('Expense updated.', 'success');
     }
 
     // No confirm dialog — a 10 second undo is friendlier than a modal on a
@@ -1198,12 +1637,12 @@
       if (deleted) {
         showToast(`Deleted "${deleted.desc}"`, null, {
           label: 'Undo',
-          run: () => undoDelete(deleted)
+          run: () => undoDeleteExpense(deleted)
         });
       }
     }
 
-    async function undoDelete(expense) {
+    async function undoDeleteExpense(expense) {
       try {
         applyState(await api('POST', '/api/expenses/restore', { expense }));
       } catch (err) {
@@ -1213,6 +1652,72 @@
       renderHistory();
       renderBalances();
       showToast(`Restored "${expense.desc}"`, 'success');
+    }
+
+    // --- Payments ---
+
+    function openPaymentModal(fromId, toId, amount) {
+      const options = state.people
+        .map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
+      const from = document.getElementById('pay-from');
+      const to = document.getElementById('pay-to');
+      from.innerHTML = options;
+      to.innerHTML = options;
+      if (fromId) from.value = fromId;
+      if (toId) to.value = toId;
+      else if (state.people[1]) to.value = state.people[1].id;
+
+      document.getElementById('pay-amount').value = amount != null ? Number(amount).toFixed(2) : '';
+      document.getElementById('pay-date').value = isoToDateInput();
+      document.getElementById('pay-note').value = '';
+      document.getElementById('payment-modal').classList.remove('hidden');
+    }
+
+    async function savePayment() {
+      const fromId = document.getElementById('pay-from').value;
+      const toId = document.getElementById('pay-to').value;
+      const amount = Number(document.getElementById('pay-amount').value);
+
+      if (fromId === toId) { showToast('Pick two different people.', 'error'); return; }
+      if (!Number.isFinite(amount) || amount <= 0) { showToast('Enter a valid amount.', 'error'); return; }
+
+      const result = await withButton('pay-save-btn', () => api('POST', '/api/payments', {
+        fromId, toId, amount,
+        note: document.getElementById('pay-note').value.trim(),
+        date: dateInputToISO(document.getElementById('pay-date').value)
+      }));
+      if (!result) return;
+      applyState(result);
+      closeModal('payment-modal');
+      renderBalances();
+      showToast(`${personName(fromId)} paid ${personName(toId)} ${money(amount)}`, 'success');
+    }
+
+    async function deletePayment(id) {
+      const deleted = state.payments.find(y => y.id === id);
+      try {
+        applyState(await api('DELETE', '/api/payments/' + encodeURIComponent(id)));
+      } catch (err) {
+        showToast(err.message, 'error');
+        try { applyState(await api('GET', '/api/data')); } catch (_) {}
+        renderBalances();
+        return;
+      }
+      renderBalances();
+      if (deleted) {
+        showToast('Payment deleted', null, { label: 'Undo', run: () => undoDeletePayment(deleted) });
+      }
+    }
+
+    async function undoDeletePayment(payment) {
+      try {
+        applyState(await api('POST', '/api/payments/restore', { payment }));
+      } catch (err) {
+        showToast('Could not undo: ' + err.message, 'error');
+        return;
+      }
+      renderBalances();
+      showToast('Payment restored.', 'success');
     }
 
     // --- PIN gate ---
@@ -1228,17 +1733,9 @@
       input.focus();
     }
 
-    function closePinModal() {
-      document.getElementById('pin-modal').classList.add('hidden');
-    }
-
-    function onBackdropClick(event) {
-      if (event.target.id === 'pin-modal') closePinModal();
-    }
-
     function onPinKey(event) {
       if (event.key === 'Enter') confirmPin();
-      if (event.key === 'Escape') closePinModal();
+      if (event.key === 'Escape') closeModal('pin-modal');
     }
 
     async function confirmPin() {
@@ -1253,7 +1750,7 @@
       }
 
       applyState(result);
-      closePinModal();
+      closeModal('pin-modal');
       renderHistory();
       renderBalances();
       switchTab('history');
@@ -1273,18 +1770,20 @@
       }
 
       list.innerHTML = [...state.expenses].reverse().map(e => {
-        const dateStr = new Date(e.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        const splitNames = e.splitAmong.map(personName).join(', ');
-        const share = money(e.amount / e.splitAmong.length);
+        const uneven = !!e.shares;
+        const detail = uneven
+          ? e.splitAmong.map(id => `${escapeHtml(personName(id))} ${money(e.shares[id] || 0)}`).join(', ')
+          : `${e.splitAmong.length} ways (${money(e.amount / e.splitAmong.length)} each) &middot; ${escapeHtml(e.splitAmong.map(personName).join(', '))}`;
         return `
           <div class="expense-item">
             <div class="expense-info">
-              <h3>${escapeHtml(e.desc)}</h3>
-              <p>${escapeHtml(personName(e.payerId))} paid &middot; Split ${e.splitAmong.length} ways (${escapeHtml(share)} each) &middot; ${escapeHtml(splitNames)} &middot; ${dateStr}</p>
+              <h3>${escapeHtml(e.desc)} ${uneven ? '<span class="tag">uneven</span>' : ''}</h3>
+              <p>${escapeHtml(personName(e.payerId))} paid &middot; ${detail} &middot; ${shortDate(e.date)}</p>
             </div>
             <div class="expense-right">
               <span class="expense-amount">${money(e.amount)}</span>
-              <button class="delete-btn" onclick="deleteExpense('${escapeHtml(e.id)}')" title="Delete">&times;</button>
+              <button class="icon-btn" onclick="openEditModal('${escapeHtml(e.id)}')" title="Edit">&#9998;</button>
+              <button class="icon-btn danger" onclick="deleteExpense('${escapeHtml(e.id)}')" title="Delete">&times;</button>
             </div>
           </div>`;
       }).join('');
@@ -1298,10 +1797,17 @@
         if (!balances.has(e.payerId)) return;
         const participants = e.splitAmong.filter(id => balances.has(id));
         if (participants.length === 0) return;
-        const share = e.amount / participants.length;
         spent.set(e.payerId, spent.get(e.payerId) + e.amount);
         balances.set(e.payerId, balances.get(e.payerId) + e.amount); // payer fronted the full amount
-        participants.forEach(id => balances.set(id, balances.get(id) - share)); // each owes their share
+        participants.forEach(id => balances.set(id, balances.get(id) - shareOf(e, id)));
+      });
+
+      // Handing over cash cancels debt: the payer is owed that much more, the
+      // recipient that much less. It is not spending, so totals are untouched.
+      state.payments.forEach(y => {
+        if (!balances.has(y.fromId) || !balances.has(y.toId)) return;
+        balances.set(y.fromId, balances.get(y.fromId) + y.amount);
+        balances.set(y.toId, balances.get(y.toId) - y.amount);
       });
 
       document.getElementById('balance-cards').innerHTML = state.people.map(p => {
@@ -1317,6 +1823,7 @@
       }).join('');
 
       renderSettlements(balances);
+      renderPayments();
     }
 
     // Greedy largest-debtor to largest-creditor, which yields at most n-1
@@ -1356,9 +1863,32 @@
             <span class="arrow">&#10132;</span>
             <span class="to">${escapeHtml(personName(s.to))}</span>
           </div>
-          <span class="settlement-amount">${money(s.amount)}</span>
-        </div>
-      `).join('');
+          <div class="settlement-right">
+            <span class="settlement-amount">${money(s.amount)}</span>
+            <button class="settle-btn"
+                    onclick="openPaymentModal('${escapeHtml(s.from)}', '${escapeHtml(s.to)}', ${s.amount})">Settle</button>
+          </div>
+        </div>`).join('');
+    }
+
+    function renderPayments() {
+      const el = document.getElementById('payment-list');
+      if (state.payments.length === 0) {
+        el.innerHTML = `<div class="empty-state" style="padding:24px 12px"><p>No payments recorded yet.</p></div>`;
+        return;
+      }
+      el.innerHTML = [...state.payments].reverse().map(y => `
+        <div class="payment-item">
+          <div>
+            <div><span class="from" style="color:var(--green);font-weight:600">${escapeHtml(personName(y.fromId))}</span>
+              paid <span style="font-weight:600">${escapeHtml(personName(y.toId))}</span></div>
+            <div class="meta">${shortDate(y.date)}${y.note ? ' &middot; ' + escapeHtml(y.note) : ''}</div>
+          </div>
+          <div class="expense-right">
+            <span class="settlement-amount">${money(y.amount)}</span>
+            <button class="icon-btn danger" onclick="deletePayment('${escapeHtml(y.id)}')" title="Delete">&times;</button>
+          </div>
+        </div>`).join('');
     }
 
     // --- Keeping phones in sync ---
@@ -1374,9 +1904,10 @@
     async function refreshFromServer() {
       if (refreshing) return;
       if (state.people.length < MIN_PEOPLE) return;
-      // Never refresh over the setup or starting-balance screens — it would
+      // Never refresh over the setup screens or an open dialog — it would
       // clobber input that hasn't been saved yet.
       if (document.getElementById('app-screen').classList.contains('hidden')) return;
+      if (anyModalOpen()) return;
 
       refreshing = true;
       try {
