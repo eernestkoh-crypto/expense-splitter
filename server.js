@@ -5,7 +5,11 @@ const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_FILE = path.join(__dirname, 'data.json');
+// On a host with an ephemeral filesystem (Railway, Render, Fly) this MUST point
+// at a mounted volume, or every deploy and every container restart wipes the
+// data. Locally it falls back to the project directory.
+const DATA_DIR = process.env.DATA_DIR || __dirname;
+const DATA_FILE = path.join(DATA_DIR, 'data.json');
 const TMP_FILE = DATA_FILE + '.tmp';
 
 const MIN_PEOPLE = 2;
@@ -15,8 +19,16 @@ const MAX_DESC_LEN = 100;
 const MAX_AMOUNT = 100000000;
 const SCHEMA_VERSION = 2;
 
+// Guards the clear-all endpoint against an accidental wipe. The client knows
+// this value, so it is a speed bump, not access control.
+const CLEAR_PIN = process.env.CLEAR_PIN || '123456';
+
 app.use(express.json({ limit: '100kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// A freshly mounted volume may be empty but present; a mistyped DATA_DIR won't
+// exist at all. Create it either way so the first write cannot fail.
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 // --- helpers ---
 
@@ -81,7 +93,8 @@ function readData() {
 }
 
 // Write to a temp file and rename, so a crash mid-write cannot leave a
-// truncated data.json behind. rename() is atomic on the same filesystem.
+// truncated data.json behind. rename() is atomic on the same filesystem, which
+// is why TMP_FILE lives in DATA_DIR rather than the OS temp dir.
 function writeData(data) {
   fs.writeFileSync(TMP_FILE, JSON.stringify(data, null, 2));
   fs.renameSync(TMP_FILE, DATA_FILE);
@@ -155,6 +168,66 @@ function validateExpense(body, people) {
   };
 }
 
+// Validates a whole document from an exported backup. Unlike validatePeople
+// this accepts the ids in the file, since the point is to restore the original
+// references exactly. Everything is still checked — a backup is not trusted
+// just because it came from us.
+function validateImport(body) {
+  if (!body || typeof body !== 'object') return { error: 'Invalid backup file.' };
+  if (!Array.isArray(body.people) || !Array.isArray(body.expenses)) {
+    return { error: 'Backup must contain "people" and "expenses" arrays.' };
+  }
+  if (body.people.length < MIN_PEOPLE) return { error: `Backup needs at least ${MIN_PEOPLE} people.` };
+  if (body.people.length > MAX_PEOPLE) return { error: `Backup has more than ${MAX_PEOPLE} people.` };
+
+  const people = [];
+  const ids = new Set();
+  for (const raw of body.people) {
+    if (!raw || typeof raw !== 'object') return { error: 'Malformed person in backup.' };
+    const id = typeof raw.id === 'string' ? raw.id.trim() : '';
+    const name = typeof raw.name === 'string' ? raw.name.trim() : '';
+    if (!id || !name) return { error: 'Every person in the backup needs an id and a name.' };
+    if (name.length > MAX_NAME_LEN) return { error: `Name "${name}" is too long.` };
+    if (ids.has(id)) return { error: 'Backup contains two people with the same id.' };
+    const bal = raw.startingBalance === undefined ? 0 : Number(raw.startingBalance);
+    if (!Number.isFinite(bal) || Math.abs(bal) > MAX_AMOUNT) {
+      return { error: `Invalid starting balance for ${name}.` };
+    }
+    ids.add(id);
+    people.push({ id, name, startingBalance: round2(bal) });
+  }
+
+  const expenses = [];
+  const expenseIds = new Set();
+  for (const raw of body.expenses) {
+    if (!raw || typeof raw !== 'object') return { error: 'Malformed expense in backup.' };
+    const id = typeof raw.id === 'string' ? raw.id.trim() : '';
+    const desc = typeof raw.desc === 'string' ? raw.desc.trim() : '';
+    if (!id || !desc) return { error: 'Every expense in the backup needs an id and a description.' };
+    if (desc.length > MAX_DESC_LEN) return { error: `Description "${desc}" is too long.` };
+    if (expenseIds.has(id)) return { error: 'Backup contains two expenses with the same id.' };
+    const amount = Number(raw.amount);
+    if (!Number.isFinite(amount) || amount <= 0 || amount > MAX_AMOUNT) {
+      return { error: `Invalid amount on "${desc}".` };
+    }
+    if (!ids.has(raw.payerId)) return { error: `"${desc}" was paid by someone not in the backup.` };
+    if (!Array.isArray(raw.splitAmong) || raw.splitAmong.length === 0) {
+      return { error: `"${desc}" has an empty split.` };
+    }
+    const splitAmong = [...new Set(raw.splitAmong)];
+    if (splitAmong.some(pid => !ids.has(pid))) {
+      return { error: `"${desc}" is split with someone not in the backup.` };
+    }
+    const date = typeof raw.date === 'string' && !Number.isNaN(Date.parse(raw.date))
+      ? raw.date
+      : new Date().toISOString();
+    expenseIds.add(id);
+    expenses.push({ id, desc, amount: round2(amount), payerId: raw.payerId, splitAmong, date });
+  }
+
+  return { data: { version: SCHEMA_VERSION, people, expenses } };
+}
+
 // --- API ---
 // Every write is a read-modify-write of the whole file using synchronous fs
 // calls inside a single handler, so requests cannot interleave and concurrent
@@ -212,8 +285,25 @@ app.delete('/api/expenses/:id', (req, res) => {
 });
 
 app.delete('/api/expenses', (req, res) => {
+  const pin = req.body && req.body.pin;
+  if (typeof pin !== 'string' || pin.trim() !== CLEAR_PIN) {
+    return res.status(403).json({ error: 'Incorrect PIN.' });
+  }
   const data = readData();
   data.expenses = [];
+  writeData(data);
+  res.json(data);
+});
+
+// Restore from an exported backup. PIN-gated because it replaces everything.
+app.put('/api/data', (req, res) => {
+  const pin = req.body && req.body.pin;
+  if (typeof pin !== 'string' || pin.trim() !== CLEAR_PIN) {
+    return res.status(403).json({ error: 'Incorrect PIN.' });
+  }
+  const { data, error } = validateImport(req.body && req.body.data);
+  if (error) return res.status(400).json({ error });
+
   writeData(data);
   res.json(data);
 });
@@ -241,4 +331,9 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Expense Splitter running on port ${PORT}`);
+  console.log(`Data file: ${DATA_FILE}`);
+  if (!process.env.DATA_DIR) {
+    console.warn('WARNING: DATA_DIR is not set. On a host with an ephemeral ' +
+      'filesystem, all data will be lost on the next deploy or restart.');
+  }
 });

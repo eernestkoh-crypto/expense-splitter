@@ -645,6 +645,64 @@
     .toast.error { border-color: var(--red); }
     .toast.success { border-color: var(--green); }
 
+    /* PIN modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.72);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 200;
+    }
+
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 26px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+    }
+
+    .modal h2 {
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+    }
+
+    .modal p {
+      color: var(--muted);
+      font-size: 0.85rem;
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+
+    .modal input {
+      width: 100%;
+      padding: 14px 16px;
+      background: #111;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 1.3rem;
+      letter-spacing: 0.4em;
+      text-align: center;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .modal input:focus { border-color: var(--accent); }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .modal-actions .btn { flex: 1; margin-top: 0; }
+
     .hidden { display: none !important; }
 
     @media (max-width: 500px) {
@@ -743,7 +801,24 @@
       <div class="actions-bar">
         <button class="btn btn-small btn-outline" onclick="editPeople()">Edit Squad</button>
         <button class="btn btn-small btn-outline" onclick="editStartingBalances()">Starting Balances</button>
+        <button class="btn btn-small btn-outline" onclick="exportBackup()">Backup</button>
+        <button class="btn btn-small btn-outline" onclick="chooseBackup()">Restore</button>
         <button class="btn btn-small btn-danger" onclick="clearAll()">Clear All</button>
+      </div>
+      <input type="file" id="import-file" accept="application/json,.json" class="hidden" onchange="onImportFile(event)" />
+    </div>
+  </div>
+
+  <!-- PIN gate for Clear All -->
+  <div class="modal-backdrop hidden" id="pin-modal" onclick="onBackdropClick(event)">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pin-modal-title">
+      <h2 id="pin-modal-title">Clear all expenses?</h2>
+      <p id="pin-modal-body">This deletes every expense for the whole squad and can't be undone.</p>
+      <input type="password" id="pin-input" inputmode="numeric" pattern="[0-9]*" maxlength="6"
+             placeholder="PIN" autocomplete="off" onkeydown="onPinKey(event)" />
+      <div class="modal-actions">
+        <button class="btn btn-small btn-outline" onclick="closePinModal()">Cancel</button>
+        <button class="btn btn-small btn-danger" id="pin-confirm-btn" onclick="confirmPin()">Clear All</button>
       </div>
     </div>
   </div>
@@ -1059,17 +1134,128 @@
       renderBalances();
     }
 
-    async function clearAll() {
-      if (!confirm('Clear ALL expenses? This cannot be undone.')) return;
+    // --- Backup / restore ---
+    // Storage on the host is only as durable as its mounted volume, so being
+    // able to pull a copy onto your own device matters.
+
+    async function exportBackup() {
+      let data;
       try {
-        applyState(await api('DELETE', '/api/expenses'));
+        data = await api('GET', '/api/data');
       } catch (err) {
-        showToast(err.message, 'error');
+        showToast('Could not fetch data: ' + err.message, 'error');
         return;
       }
-      renderHistory();
-      renderBalances();
-      switchTab('history');
+      const stamp = new Date().toISOString().slice(0, 10);
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `squad-splitter-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showToast('Backup downloaded.', 'success');
+    }
+
+    function chooseBackup() {
+      document.getElementById('import-file').click();
+    }
+
+    async function onImportFile(event) {
+      const file = event.target.files[0];
+      event.target.value = ''; // let the same file be picked again after a failure
+      if (!file) return;
+      try {
+        pendingImport = JSON.parse(await file.text());
+      } catch (err) {
+        showToast('That file is not valid JSON.', 'error');
+        return;
+      }
+      openPinModal('restore');
+    }
+
+    // --- PIN gate ---
+    // Clearing and restoring both replace data irreversibly, so both sit behind
+    // the PIN. The server checks it too, so neither endpoint can be hit by
+    // accident. This is a guardrail against mistakes, not access control — the
+    // PIN travels to the browser.
+
+    let pinMode = 'clear';
+    let pendingImport = null;
+
+    const PIN_MODES = {
+      clear: {
+        title: 'Clear all expenses?',
+        body: "This deletes every expense for the whole squad and can't be undone. Your squad and starting balances stay.",
+        confirm: 'Clear All'
+      },
+      restore: {
+        title: 'Restore from backup?',
+        body: 'This replaces the current squad and every expense with the contents of the file you picked.',
+        confirm: 'Restore'
+      }
+    };
+
+    function openPinModal(mode) {
+      pinMode = mode;
+      const copy = PIN_MODES[mode];
+      document.getElementById('pin-modal-title').textContent = copy.title;
+      document.getElementById('pin-modal-body').textContent = copy.body;
+      document.getElementById('pin-confirm-btn').textContent = copy.confirm;
+      const input = document.getElementById('pin-input');
+      input.value = '';
+      document.getElementById('pin-modal').classList.remove('hidden');
+      input.focus();
+    }
+
+    function clearAll() {
+      openPinModal('clear');
+    }
+
+    function closePinModal() {
+      document.getElementById('pin-modal').classList.add('hidden');
+      pendingImport = null;
+    }
+
+    function onBackdropClick(event) {
+      if (event.target.id === 'pin-modal') closePinModal();
+    }
+
+    function onPinKey(event) {
+      if (event.key === 'Enter') confirmPin();
+      if (event.key === 'Escape') closePinModal();
+    }
+
+    async function confirmPin() {
+      const pin = document.getElementById('pin-input').value.trim();
+      if (!pin) { showToast('Enter the PIN.', 'error'); return; }
+      if (pinMode === 'restore' && !pendingImport) { showToast('Pick a backup file first.', 'error'); return; }
+
+      const request = pinMode === 'restore'
+        ? () => api('PUT', '/api/data', { pin, data: pendingImport })
+        : () => api('DELETE', '/api/expenses', { pin });
+
+      // On a wrong PIN withButton toasts the error and the modal stays open.
+      const result = await withButton('pin-confirm-btn', request);
+      if (!result) {
+        document.getElementById('pin-input').select();
+        return;
+      }
+
+      const restored = pinMode === 'restore';
+      applyState(result);
+      closePinModal();
+      if (restored) {
+        renderApp();
+        showToast('Backup restored.', 'success');
+      } else {
+        renderHistory();
+        renderBalances();
+        switchTab('history');
+        showToast('All expenses cleared.', 'success');
+      }
     }
 
     // --- Rendering ---
