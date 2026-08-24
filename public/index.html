@@ -639,7 +639,25 @@
       transition: transform 0.25s ease, opacity 0.25s ease;
       opacity: 0;
       z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 16px;
     }
+
+    .toast-action {
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      padding: 4px 2px;
+    }
+
+    .toast-action:hover { text-decoration: underline; }
 
     .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
     .toast.error { border-color: var(--red); }
@@ -876,12 +894,32 @@
     }
 
     let toastTimer = null;
-    function showToast(message, type) {
+
+    // An optional { label, run } action turns the toast into an undo affordance
+    // and holds it on screen longer, since it now needs to be acted on.
+    function showToast(message, type, action) {
       const el = document.getElementById('toast');
-      el.textContent = message;
+      el.textContent = '';
+
+      const text = document.createElement('span');
+      text.textContent = message;
+      el.appendChild(text);
+
+      if (action) {
+        const btn = document.createElement('button');
+        btn.className = 'toast-action';
+        btn.textContent = action.label;
+        btn.onclick = () => {
+          clearTimeout(toastTimer);
+          el.className = 'toast';
+          action.run();
+        };
+        el.appendChild(btn);
+      }
+
       el.className = 'toast show' + (type ? ' ' + type : '');
       clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => { el.className = 'toast'; }, 3500);
+      toastTimer = setTimeout(() => { el.className = 'toast'; }, action ? 10000 : 3500);
     }
 
     // Disables the button while the request is in flight so a double-click
@@ -1067,13 +1105,34 @@
 
     // --- Expenses ---
 
-    function populateForm() {
-      document.getElementById('exp-payer').innerHTML = state.people
+    // preserve=true is used by the background refresh: someone else changing
+    // the squad must not silently reset a payer or split you already chose.
+    function populateForm(preserve) {
+      const payerSelect = document.getElementById('exp-payer');
+      const splitChecks = document.getElementById('split-checks');
+
+      const prevPayer = preserve ? payerSelect.value : null;
+      const prevIds = preserve
+        ? new Set([...splitChecks.querySelectorAll('input')].map(c => c.value))
+        : null;
+      const prevChecked = preserve
+        ? new Set([...splitChecks.querySelectorAll('input:checked')].map(c => c.value))
+        : null;
+
+      payerSelect.innerHTML = state.people
         .map(p => `<option value="${escapeHtml(p.id)}">${escapeHtml(p.name)}</option>`).join('');
 
-      document.getElementById('split-checks').innerHTML = state.people
+      splitChecks.innerHTML = state.people
         .map(p => `<label><input type="checkbox" value="${escapeHtml(p.id)}" checked /> ${escapeHtml(p.name)}</label>`)
         .join('');
+
+      if (!preserve) return;
+
+      if (prevPayer && state.people.some(p => p.id === prevPayer)) payerSelect.value = prevPayer;
+      splitChecks.querySelectorAll('input').forEach(c => {
+        // Someone who has only just joined stays checked, as on a fresh form.
+        if (prevIds.has(c.value)) c.checked = prevChecked.has(c.value);
+      });
     }
 
     function toggleAllSplit() {
@@ -1118,17 +1177,42 @@
       showToast(`Added ${desc} — ${money(amount)}`, 'success');
     }
 
+    // No confirm dialog — a 10 second undo is friendlier than a modal on a
+    // phone, and it also covers the case where you only notice a second later.
     async function deleteExpense(id) {
-      if (!confirm('Delete this expense?')) return;
+      const deleted = state.expenses.find(e => e.id === id);
       try {
         applyState(await api('DELETE', '/api/expenses/' + encodeURIComponent(id)));
       } catch (err) {
         showToast(err.message, 'error');
-        // The expense may have been deleted by someone else — resync either way.
+        // Someone else may have deleted it already — resync either way.
         try { applyState(await api('GET', '/api/data')); } catch (_) {}
+        renderHistory();
+        renderBalances();
+        return;
+      }
+
+      renderHistory();
+      renderBalances();
+
+      if (deleted) {
+        showToast(`Deleted "${deleted.desc}"`, null, {
+          label: 'Undo',
+          run: () => undoDelete(deleted)
+        });
+      }
+    }
+
+    async function undoDelete(expense) {
+      try {
+        applyState(await api('POST', '/api/expenses/restore', { expense }));
+      } catch (err) {
+        showToast('Could not undo: ' + err.message, 'error');
+        return;
       }
       renderHistory();
       renderBalances();
+      showToast(`Restored "${expense.desc}"`, 'success');
     }
 
     // --- PIN gate ---
@@ -1276,6 +1360,47 @@
         </div>
       `).join('');
     }
+
+    // --- Keeping phones in sync ---
+    // Several people add expenses at once, but a browser only re-reads the
+    // server after its own actions, so everyone else's balances silently go
+    // stale. Re-read when the tab comes back to the foreground, and slowly
+    // while it is open. Failures are ignored on purpose: patchy hotel wifi
+    // should leave the last known data on screen rather than an error.
+
+    const REFRESH_MS = 20000;
+    let refreshing = false;
+
+    async function refreshFromServer() {
+      if (refreshing) return;
+      if (state.people.length < MIN_PEOPLE) return;
+      // Never refresh over the setup or starting-balance screens — it would
+      // clobber input that hasn't been saved yet.
+      if (document.getElementById('app-screen').classList.contains('hidden')) return;
+
+      refreshing = true;
+      try {
+        const data = await api('GET', '/api/data');
+        const before = state.people.map(p => p.id + ':' + p.name).join('|');
+        applyState(data);
+        const after = state.people.map(p => p.id + ':' + p.name).join('|');
+        if (before !== after) populateForm(true);
+        renderHistory();
+        renderBalances();
+      } catch (err) {
+        // Offline or a server hiccup — keep showing what we already have.
+      } finally {
+        refreshing = false;
+      }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') refreshFromServer();
+    });
+
+    setInterval(() => {
+      if (document.visibilityState === 'visible') refreshFromServer();
+    }, REFRESH_MS);
 
     init();
   </script>

@@ -224,6 +224,34 @@ app.delete('/api/expenses/:id', (req, res) => {
   res.json(data);
 });
 
+// Backs the undo action after a delete. Re-adds an expense with its original
+// id and timestamp instead of minting new ones, so undo restores the row that
+// was there rather than a lookalike.
+app.post('/api/expenses/restore', (req, res) => {
+  const data = readData();
+  const raw = req.body && req.body.expense;
+  if (!raw || typeof raw !== 'object') return res.status(400).json({ error: 'Nothing to restore.' });
+
+  const { expense, error } = validateExpense(raw, data.people);
+  if (error) return res.status(400).json({ error });
+
+  const id = typeof raw.id === 'string' ? raw.id.trim() : '';
+  if (!id) return res.status(400).json({ error: 'Restored expense is missing its id.' });
+  if (data.expenses.some(e => e.id === id)) {
+    return res.status(409).json({ error: 'That expense is already back.' });
+  }
+  const date = typeof raw.date === 'string' && !Number.isNaN(Date.parse(raw.date))
+    ? raw.date
+    : expense.date;
+
+  data.expenses.push({ ...expense, id, date });
+  // Expenses are otherwise appended in chronological order; keep it that way so
+  // a restored row lands back in its original position rather than at the end.
+  data.expenses.sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
+  writeData(data);
+  res.status(201).json(data);
+});
+
 app.delete('/api/expenses', (req, res) => {
   const pin = req.body && req.body.pin;
   if (typeof pin !== 'string' || pin.trim() !== CLEAR_PIN) {
