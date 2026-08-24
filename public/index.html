@@ -52,6 +52,22 @@
       font-size: 0.9rem;
     }
 
+    .guide-link {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 7px 14px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-decoration: none;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .guide-link:hover { color: var(--text); border-color: var(--accent); }
+
     /* Setup Section */
     .setup-card {
       background: var(--card);
@@ -859,6 +875,7 @@
     <header>
       <h1>Squad Splitter</h1>
       <p>Track expenses &amp; settle up with your crew</p>
+      <a class="guide-link" href="/bangkok.html">Bangkok list &mdash; 75 places &nearr;</a>
     </header>
 
     <!-- Setup Screen -->
