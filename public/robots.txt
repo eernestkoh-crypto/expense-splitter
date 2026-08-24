@@ -1,0 +1,3 @@
+# Private expense tracker for one friend group. Not for indexing.
+User-agent: *
+Disallow: /

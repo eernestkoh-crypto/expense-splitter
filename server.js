@@ -24,6 +24,15 @@ const SCHEMA_VERSION = 3;
 const CLEAR_PIN = process.env.CLEAR_PIN || '123456';
 
 app.use(express.json({ limit: '100kb' }));
+
+// Keep the site out of search results. The header covers every response
+// including /api/data, which a <meta> tag in index.html cannot reach, and it
+// applies before express.static so it is set on static files too.
+app.use((req, res, next) => {
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive, nosnippet, noimageindex');
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // A freshly mounted volume may be empty but present; a mistyped DATA_DIR won't
